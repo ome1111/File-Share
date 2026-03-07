@@ -216,6 +216,50 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white rounded-lg shadow p-6 mt-6 border-t-4 border-yellow-500">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-ad text-yellow-500 mr-2"></i> Custom Shortlink Ad Manager</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Countdown Timer (Seconds)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="timer_sec" placeholder="e.g. 10" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                                <button onclick="updateSetting('timer_sec')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 rounded font-bold"><i class="fas fa-save"></i></button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Wait time for user before "Get Link" appears.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">1. Head Ad (Popunder)</label>
+                            <textarea id="ad_code_1" rows="3" placeholder="Paste script code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_1')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 1</button>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">2. Body Ad (Social Bar)</label>
+                            <textarea id="ad_code_2" rows="3" placeholder="Paste script code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_2')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 2</button>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">3. Top Banner Ad</label>
+                            <textarea id="ad_code_3" rows="3" placeholder="Paste banner code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_3')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 3</button>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">4. Middle Banner Ad</label>
+                            <textarea id="ad_code_4" rows="3" placeholder="Paste banner code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_4')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 4</button>
+                        </div>
+                        <div class="mb-4 md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">5. Footer Sticky Ad</label>
+                            <textarea id="ad_code_5" rows="3" placeholder="Paste footer ad code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_5')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 5</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <div id="tab-broadcast" class="tab-content">
@@ -301,6 +345,7 @@
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById("toast");
+            const toastMsg = document.getElementById("toast-message");
             toast.className = `fixed top-5 right-5 z-50 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             toast.innerHTML = `<i class="fas ${isError ? 'fa-times-circle' : 'fa-check-circle'}"></i> <span>${msg}</span>`;
             toast.classList.add("show");
@@ -333,10 +378,18 @@
                 document.getElementById("upi_id").value = data.upi_id || "";
                 document.getElementById("cpm").value = data.cpm || "50";
                 
-                // New Bot Settings
+                // Bot Configuration
                 document.getElementById("del_timer").value = data.del_timer || "0";
                 document.getElementById("START_MSG").value = data.START_MSG || "";
                 document.getElementById("fsub_channels").value = data.fsub_channels ? data.fsub_channels.join(", ") : "";
+
+                // 🔥 Custom Shortlink Ad Settings
+                document.getElementById("timer_sec").value = data.timer_sec || "10";
+                document.getElementById("ad_code_1").value = data.ad_code_1 || "";
+                document.getElementById("ad_code_2").value = data.ad_code_2 || "";
+                document.getElementById("ad_code_3").value = data.ad_code_3 || "";
+                document.getElementById("ad_code_4").value = data.ad_code_4 || "";
+                document.getElementById("ad_code_5").value = data.ad_code_5 || "";
 
             } catch (err) {
                 console.error(err);
@@ -417,7 +470,7 @@
         }
 
         // ==========================================
-        // 🔥 NEW: USER MANAGEMENT API CALLS
+        // 🔥 USER MANAGEMENT API CALLS
         // ==========================================
         let currentManageUid = null;
 
@@ -458,7 +511,7 @@
         }
 
         // ==========================================
-        // 🔥 NEW: BROADCAST API CALL
+        // 🔥 BROADCAST API CALL
         // ==========================================
         async function sendBroadcast() {
             const text = document.getElementById("broadcast_text").value;
