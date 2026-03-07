@@ -177,7 +177,8 @@ async def start_command(client: Client, message: Message):
                     is_earning_link = True
                     try:
                         parts = decoded_raw.split("-")
-                        decoded_raw = parts[1]  
+                        # 🔥 BUG FIXED HERE: get- প্রিফিক্স যুক্ত করা হলো যাতে বট ফাইল খুঁজে পায়
+                        decoded_raw = f"get-{parts[1]}"  
                         uploader_id = int(parts[2])
                     except Exception as e:
                         log.error(f"Earning decode error: {e}")
