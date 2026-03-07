@@ -10,7 +10,7 @@ Key changes
 6. Smaller helpers (parse_ids, make_caption) remove repetitive code.
 7. 🔥 Added User Earning System Logic (Seamless integration).
 8. 🚀 Added Referral Tracking & Ban System Logic.
-9. 🎛️ Persistent Bottom Menu added.
+9. 🎛️ Persistent Bottom Menu added with Upload button.
 """
 import asyncio, random, string, logging
 from datetime import datetime, timedelta
@@ -26,7 +26,6 @@ except ImportError:
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.errors import FloodWait, InputUserDeactivated, UserIsBlocked
-# 🔥 IMPORT UPDATED FOR BOTTOM MENU
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, KeyboardButton
 
 from bot import Bot
@@ -177,16 +176,14 @@ async def start_command(client: Client, message: Message):
                 if decoded_raw.startswith("earn-"):
                     is_earning_link = True
                     try:
-                        # Format: earn-{file_id}-{user_id}
                         parts = decoded_raw.split("-")
-                        decoded_raw = parts[1]  # Extracting only the file_id for regular processing
+                        decoded_raw = parts[1]  
                         uploader_id = int(parts[2])
                     except Exception as e:
                         log.error(f"Earning decode error: {e}")
                         await message.reply_text("❌ Invalid Earning Link."); return
                 
                 arg_list = decoded_raw.split("-")
-                # =======================================================
 
                 short    = await get_variable("short", "")
                 mode     = await get_variable("mode", "")
@@ -262,15 +259,12 @@ async def start_command(client: Client, message: Message):
                 # 💰 EARNING REWARD LOGIC (Add view to uploader)
                 # =======================================================
                 if is_earning_link and uploader_id and sent:
-                    # Anti-Fraud: Uploader cannot view their own files for earnings
                     if uid != uploader_id:
                         try:
                             await add_view_to_user(uploader_id)
                         except Exception as e:
                             log.error(f"Failed to add earning view: {e}")
-                # =======================================================
 
-                # auto-delete (non-blocking) -------------------------------
                 if await get_variable("del","")=="1":
                     delay = int(await get_variable("del_timer","0"))
                     if delay:
@@ -282,19 +276,20 @@ async def start_command(client: Client, message: Message):
 
 # helpers =========================================================
 async def send_welcome(client, msg):
-    # 🔥 NEW: Persistent Bottom Menu Keyboard (6 Buttons)
+    # 🔥 NEW: Persistent Bottom Menu Keyboard (7 Buttons)
     reply_menu = ReplyKeyboardMarkup(
         [
-            [KeyboardButton("💰 My Wallet"), KeyboardButton("🏆 Leaderboard")],
-            [KeyboardButton("🔗 Referral Link"), KeyboardButton("👤 My Profile")],
-            [KeyboardButton("⚙️ Settings"), KeyboardButton("❓ Help & Info")]
+            [KeyboardButton("📤 Upload File"), KeyboardButton("💰 My Wallet")],
+            [KeyboardButton("🏆 Leaderboard"), KeyboardButton("🔗 Referral Link")],
+            [KeyboardButton("👤 My Profile"), KeyboardButton("⚙️ Settings")],
+            [KeyboardButton("❓ Help & Info")]
         ],
-        resize_keyboard=True, # স্ক্রিনের সাইজ অনুযায়ী মানিয়ে নেবে
-        is_persistent=True    # কীবোর্ড সবসময় স্ক্রিনের নিচে ধরে রাখবে
+        resize_keyboard=True,
+        is_persistent=True
     )
 
-    start_tpl = await get_variable("START_MSG",
-                                   "<b>Hi {mention}! Send me a link or code.</b>")
+    start_tpl = await get_variable("START_MSG", "<b>Hi {mention}! Send me a link or code.</b>")
+    
     await msg.reply_photo(
         photo=random.choice(images),
         caption=start_tpl.format(
@@ -303,7 +298,8 @@ async def send_welcome(client, msg):
             username=("@" + msg.from_user.username) if msg.from_user.username else None,
             mention=msg.from_user.mention,
             id=msg.from_user.id),
-        reply_markup=reply_menu, quote=True # ইনলাইন কীবোর্ডের বদলে বটম মেনু দেওয়া হলো
+        reply_markup=reply_menu,
+        quote=True
     )
 
 async def schedule_delete(sent, user_msg, delay, client):
@@ -319,7 +315,6 @@ async def schedule_delete(sent, user_msg, delay, client):
         await user_msg.reply(note, reply_markup=kb)
     except: pass
 
-# =================================================================
 @Bot.on_message(filters.command("users") & filters.private)
 async def users_cmd(client: Bot, m: Message):
     if m.from_user.id not in await get_variable("admin", []): return
@@ -350,14 +345,8 @@ async def broadcast_cmd(client: Bot, m: Message):
                 stats["fail"]+=1
 
     await asyncio.gather(*[push(u) for u in users])
-    await tmp.edit(f"""<b><u>Broadcast done</u>
-
-Total: <code>{len(users)}</code>
-Success: <code>{stats["ok"]}</code>
-Blocked: <code>{stats["blocked"]}</code>
-Deleted: <code>{stats["deleted"]}</code>
-Failed: <code>{stats["fail"]}</code></b>""")
+    await tmp.edit(f"""<b><u>Broadcast done</u>\n\nTotal: <code>{len(users)}</code>\nSuccess: <code>{stats["ok"]}</code>\nBlocked: <code>{stats["blocked"]}</code>\nDeleted: <code>{stats["deleted"]}</code>\nFailed: <code>{stats["fail"]}</code></b>""")
 
 @Bot.on_message(filters.command("senduser"))
-async def senduser_cmd(client, m):  # unchanged
+async def senduser_cmd(client, m):
     await handle_senduser_command(client, m)
