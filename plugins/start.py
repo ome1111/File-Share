@@ -10,6 +10,7 @@ Key changes
 6. Smaller helpers (parse_ids, make_caption) remove repetitive code.
 7. 🔥 Added User Earning System Logic (Seamless integration).
 8. 🚀 Added Referral Tracking & Ban System Logic.
+9. 🎛️ Persistent Bottom Menu added.
 """
 import asyncio, random, string, logging
 from datetime import datetime, timedelta
@@ -25,7 +26,8 @@ except ImportError:
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.errors import FloodWait, InputUserDeactivated, UserIsBlocked
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+# 🔥 IMPORT UPDATED FOR BOTTOM MENU
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, KeyboardButton
 
 from bot import Bot
 from command.work import not_subscribed
@@ -280,11 +282,17 @@ async def start_command(client: Client, message: Message):
 
 # helpers =========================================================
 async def send_welcome(client, msg):
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("💰 My Wallet", callback_data="my_wallet")],
-        [InlineKeyboardButton("😊 stats", callback_data="about"),
-         InlineKeyboardButton("🔒 Close", callback_data="close")]
-    ])
+    # 🔥 NEW: Persistent Bottom Menu Keyboard (6 Buttons)
+    reply_menu = ReplyKeyboardMarkup(
+        [
+            [KeyboardButton("💰 My Wallet"), KeyboardButton("🏆 Leaderboard")],
+            [KeyboardButton("🔗 Referral Link"), KeyboardButton("👤 My Profile")],
+            [KeyboardButton("⚙️ Settings"), KeyboardButton("❓ Help & Info")]
+        ],
+        resize_keyboard=True, # স্ক্রিনের সাইজ অনুযায়ী মানিয়ে নেবে
+        is_persistent=True    # কীবোর্ড সবসময় স্ক্রিনের নিচে ধরে রাখবে
+    )
+
     start_tpl = await get_variable("START_MSG",
                                    "<b>Hi {mention}! Send me a link or code.</b>")
     await msg.reply_photo(
@@ -295,7 +303,7 @@ async def send_welcome(client, msg):
             username=("@" + msg.from_user.username) if msg.from_user.username else None,
             mention=msg.from_user.mention,
             id=msg.from_user.id),
-        reply_markup=kb, quote=True
+        reply_markup=reply_menu, quote=True # ইনলাইন কীবোর্ডের বদলে বটম মেনু দেওয়া হলো
     )
 
 async def schedule_delete(sent, user_msg, delay, client):
@@ -353,4 +361,3 @@ Failed: <code>{stats["fail"]}</code></b>""")
 @Bot.on_message(filters.command("senduser"))
 async def senduser_cmd(client, m):  # unchanged
     await handle_senduser_command(client, m)
-
