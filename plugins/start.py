@@ -36,12 +36,6 @@ from database.database import (add_user, del_user, full_userbase, get_user,
 from helper_func import decode, encode, get_messages, get_shortlink
 from users import handle_senduser_command
 
-# Earning System Import
-try:
-    from database.database import add_view_to_user
-except ImportError:
-    pass
-
 log = LOGGER(__name__)
 
 # ----------------------------------------------------------------
@@ -256,15 +250,8 @@ async def start_command(client: Client, message: Message):
                         except Exception as e:
                             log.error("copy error %s", e)
 
-                # =======================================================
-                # 💰 EARNING REWARD LOGIC (Add view to uploader)
-                # =======================================================
-                if is_earning_link and uploader_id and sent:
-                    if uid != uploader_id:
-                        try:
-                            await add_view_to_user(uploader_id)
-                        except Exception as e:
-                            log.error(f"Failed to add earning view: {e}")
+                # 🔥 MASTERSTROKE: BOT EARNING LOGIC REMOVED FROM HERE
+                # (টাকা এখন সরাসরি ওয়েবসাইট থেকে অ্যাড হবে, ফলে বাইপাস করলে ইনকাম হবে না)
 
                 if await get_variable("del","")=="1":
                     delay = int(await get_variable("del_timer","0"))
