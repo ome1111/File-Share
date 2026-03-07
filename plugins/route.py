@@ -71,6 +71,23 @@ async def custom_shortlink_view(request):
             "link_id": link_id,
             "timestamp": datetime.now()
         })
+        
+        # 🔥 MASTERSTROKE: ওয়েবসাইটের ভেতরেই টাকা অ্যাড করা!
+        try:
+            from helper_func import decode
+            from database.database import add_view_to_user
+            
+            # বটের লিংক থেকে ইউজারের আইডি বের করা
+            bot_param = destination_url.split("start=")[-1]
+            decoded_str = await decode(bot_param) # এটি দেখতে হবে: earn-12345-98765
+            
+            if decoded_str.startswith("earn-"):
+                uploader_id = int(decoded_str.split("-")[2])
+                await add_view_to_user(uploader_id) # ইউজারের ব্যালেন্সে টাকা যোগ হয়ে গেলো!
+        except Exception as e:
+            print("Web Reward Error:", e)
+    # =======================================================
+
     # যদি recent_visit থাকে, তবে ভিউ কাউন্ট বাড়বে না (Fake View Blocked!)
     # =======================================================
     
