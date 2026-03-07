@@ -5,6 +5,7 @@ import os
 import random
 import string
 import re
+from datetime import datetime
 from pyrogram import Client
 from pyrogram.errors import FloodWait
 
@@ -50,7 +51,7 @@ async def get_messages(client, message_ids):
     return messages
 
 # ==========================================
-# 🛠️ MISSING FUNCTION FIXED
+# 🛠️ MESSAGE ID GETTER
 # ==========================================
 def get_message_id(client, message):
     if message.forward_from_chat:
@@ -74,29 +75,33 @@ def get_message_id(client, message):
     return 0
 
 # ==========================================
-# 🚀 YOUR CUSTOM SHORTLINK GENERATOR
+# 🚀 YOUR CUSTOM SHORTLINK GENERATOR (Fixed)
 # ==========================================
 async def get_shortlink(url: str):
     """
     এই ফাংশনটি এখন থেকে আর Shareus ব্যবহার করবে না!
     এটি আপনার ডাটাবেসে লিংক সেভ করে আপনার ওয়েবসাইটের লিংক ইউজারকে দেবে।
     """
-    # আপনার বটের আসল ওয়েবসাইটের ডোমেইন বসানো হলো
+    # আপনার বটের আসল ওয়েবসাইটের ডোমেইন
     YOUR_DOMAIN = "https://file-share-1hlu.onrender.com"
     
-    # একটি র‍্যান্ডম ৬ অক্ষরের ইউনিক আইডি তৈরি করা (যেমন: aB3x9Q)
+    # একটি র‍্যান্ডম ৬ অক্ষরের ইউনিক আইডি তৈরি করা
     link_id = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
     
-    # ডাটাবেসে লিংকের সব তথ্য সেভ করা
-    shortlinks_db.insert_one({
-        "_id": link_id,
-        "title": "Secure File Download",
-        "destination_url": url,  # মেইন টেলিগ্রাম ফাইলের লিংক
-        "image_url": "https://cdn-icons-png.flaticon.com/512/285/285032.png", # আপনার পেজে দেখানোর জন্য সুন্দর একটি আইকন
-        "views": 0,
-        "status": "active"
-    })
+    # 🔥 FIX: এখানে await যোগ করা হয়েছে। await ছাড়া Async DB তে ডাটা সেভ হয় না।
+    try:
+        await shortlinks_db.insert_one({
+            "_id": link_id,
+            "title": "Secure File Download",
+            "destination_url": url,  # মেইন টেলিগ্রাম ফাইলের লিংক
+            "image_url": "https://cdn-icons-png.flaticon.com/512/285/285032.png",
+            "views": 0,
+            "status": "active",
+            "created_at": datetime.now()
+        })
+    except Exception as e:
+        print(f"Error saving shortlink: {e}")
+        return url # এরর হলে অরিজিনাল লিংকই পাঠিয়ে দেবে যাতে ইউজার ফাইল পায়
     
     # আপনার ওয়েবসাইটের ভিউ পেজের ফাইনাল লিংক রিটার্ন করা
     return f"{YOUR_DOMAIN}/view/{link_id}"
-
