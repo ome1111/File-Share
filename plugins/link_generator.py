@@ -1,113 +1,59 @@
-# (©)Codexbotz
-
+# (©) Monetized Link Generator
+import os
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import Bot
-from database.database import get_variable
-from helper_func import encode, get_message_id
+from config import CHANNEL_ID
+from helper_func import encode, get_shortlink
 
+@Bot.on_message(filters.private & (filters.document | filters.video | filters.audio | filters.photo))
+async def generate_earning_link(client: Client, message: Message):
+    # ইউজার ফাইল দিলে প্রথমে এই মেসেজটি দেবে
+    wait_msg = await message.reply_text("⏳ **Processing your file for earning link...**")
+    
+    try:
+        # ১. ফাইলটি আপনার ডাটাবেস চ্যানেলে সেভ করবে
+        forwarded_msg = await message.copy(chat_id=CHANNEL_ID)
+        
+        # ২. ফাইলের আইডি এবং ইউজারের আইডি বের করবে
+        msg_id_multiplied = forwarded_msg.id * abs(CHANNEL_ID)
+        user_id = message.from_user.id
+        
+        # ৩. ইনকাম সিস্টেমের জন্য স্পেশাল স্ট্রিং তৈরি করবে (earn-fileid-userid)
+        raw_string = f"earn-{msg_id_multiplied}-{user_id}"
+        
+        # ৪. কোডটিকে এনকোড করবে
+        encoded_string = await encode(raw_string)
+        
+        # ৫. বটের অরিজিনাল লিংক তৈরি করবে
+        bot_username = client.me.username
+        bot_link = f"https://t.me/{bot_username}?start={encoded_string}"
+        
+        # ৬. আপনার ওয়েবসাইটের অ্যাড-পেজের শর্টলিংক জেনারেট করবে
+        earning_link = await get_shortlink(bot_link)
+        
+        # ফাইলের নাম বের করা (সুন্দর করে দেখানোর জন্য)
+        file_name = "File"
+        if message.document: file_name = message.document.file_name
+        elif message.video: file_name = message.video.file_name or "Video"
+        elif message.audio: file_name = message.audio.file_name or "Audio"
+        
+        # ৭. ইউজারকে ফাইনাল ইনকাম লিংক দিয়ে দেবে
+        text = f"""
+✅ **Yᴏᴜʀ Eᴀʀɴɪɴɢ Lɪɴᴋ is Rᴇᴀᴅʏ!**
 
-@Bot.on_message(filters.private & filters.command("batch"))
-async def batch(client: Client, message: Message):
-    admin = await get_variable("admin", [])
-    userid = message.from_user.id
-    if userid not in admin:
-        return
-    while True:
-        try:
-            first_message = await client.ask(
-                text="Forward the First Message from DB Channel (with Quotes)..\n\nor Send the DB Channel Post Link",
-                chat_id=message.from_user.id,
-                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-                timeout=60,
-            )
-        except BaseException:
-            return
-        f_msg_id = await get_message_id(client, first_message)
-        if f_msg_id:
-            break
-        else:
-            await first_message.reply(
-                "❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is taken from DB Channel",
-                quote=True,
-            )
-            continue
+📁 **Fɪʟᴇ:** `{file_name}`
+🔗 **Lɪɴᴋ:** `{earning_link}`
 
-    while True:
-        try:
-            second_message = await client.ask(
-                text="Forward the Last Message from DB Channel (with Quotes)..\nor Send the DB Channel Post link",
-                chat_id=message.from_user.id,
-                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-                timeout=60,
-            )
-        except BaseException:
-            return
-        s_msg_id = await get_message_id(client, second_message)
-        if s_msg_id:
-            break
-        else:
-            await second_message.reply(
-                "❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is taken from DB Channel",
-                quote=True,
-            )
-            continue
-
-    string = f"get-{f_msg_id * abs(client.db_channel.id)}-{s_msg_id * abs(client.db_channel.id)}"
-    base64_string = await encode(string)
-    link = f"https://t.me/{client.username}?start={base64_string}"
-    reply_markup = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "🔁 Share URL", url=f"https://telegram.me/share/url?url={link}"
-                )
-            ]
-        ]
-    )
-    await second_message.reply_text(
-        f"<b>Here is your link</b>\n\n{link}", quote=True, reply_markup=reply_markup
-    )
-
-
-@Bot.on_message(filters.private & filters.command("genlink"))
-async def link_generator(client: Client, message: Message):
-    admin = await get_variable("admin", [])
-    userid = message.from_user.id
-    if userid not in admin:
-        return
-    while True:
-        try:
-            channel_message = await client.ask(
-                text="Forward Message from the DB Channel (with Quotes)..\nor Send the DB Channel Post link",
-                chat_id=message.from_user.id,
-                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-                timeout=60,
-            )
-        except BaseException:
-            return
-        msg_id = await get_message_id(client, channel_message)
-        if msg_id:
-            break
-        else:
-            await channel_message.reply(
-                "❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is not taken from DB Channel",
-                quote=True,
-            )
-            continue
-
-    base64_string = await encode(f"get-{msg_id * abs(client.db_channel.id)}")
-    link = f"https://t.me/{client.username}?start={base64_string}"
-    reply_markup = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "🔁 Share URL", url=f"https://telegram.me/share/url?url={link}"
-                )
-            ]
-        ]
-    )
-    await channel_message.reply_text(
-        f"<b>Here is your link</b>\n\n{link}", quote=True, reply_markup=reply_markup
-    )
+_Share this link everywhere! When someone downloads from this link, your wallet balance will increase automatically. 💸_
+"""
+        reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔁 Share Link", url=f"https://telegram.me/share/url?url={earning_link}")]
+        ])
+        
+        await wait_msg.edit_text(text, reply_markup=reply_markup, disable_web_page_preview=True)
+        
+    except Exception as e:
+        # যদি কোনো এরর হয়, তাহলে আর আটকে থাকবে না, সরাসরি এরর মেসেজ দেখাবে
+        await wait_msg.edit_text(f"❌ **Error occurred:** `{e}`\n\n_Make sure your CHANNEL_ID is correctly set in Render environment variables._")
