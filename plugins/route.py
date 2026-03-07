@@ -1,17 +1,19 @@
 # (©)Codexbotz
-# Modified for Advanced Web Admin Panel & Custom Shortlink System
+# Modified for Advanced Web Admin Panel, IP Tracking & Earning System
 
 import os
 import json
 import asyncio
+from datetime import datetime, timedelta
 from aiohttp import web
 from bson.objectid import ObjectId
 
 # Circular Import Error এড়ানোর জন্য bot ইম্পোর্ট করা হয়নি
 from database.database import get_variable, set_variable, full_userbase, withdraw_data, user_data, database
 
-# নতুন কালেকশন: শর্টলিংকের ডাটা সেভ রাখার জন্য
+# কালেকশনগুলো
 shortlinks_db = database["shortlinks"]
+ip_logs_db = database["ip_logs"] # 🔥 NEW: IP Tracking Database
 
 routes = web.RouteTableDef()
 
@@ -31,7 +33,7 @@ async def root_route_handler(request):
     return web.json_response({"status": "running", "message": "File Sharing & Earning Bot is Alive!"})
 
 # ==========================================
-# 🚀 NEW: CUSTOM SHORTLINK VIEW PAGE (PHP TO PYTHON)
+# 🚀 NEW: CUSTOM SHORTLINK VIEW PAGE WITH IP TRACKING
 # ==========================================
 @routes.get("/view/{link_id}")
 async def custom_shortlink_view(request):
@@ -45,8 +47,32 @@ async def custom_shortlink_view(request):
         error_html = "<h2 style='text-align:center; color:#f38ba8; margin-top:20%; font-family:sans-serif;'>❌ Invalid or Expired Link!</h2>"
         return web.Response(text=error_html, content_type="text/html")
         
-    # ভিউ (Views) কাউন্ট আপডেট করা (+1)
-    shortlinks_db.update_one({"_id": link_id}, {"$inc": {"views": 1}})
+    # =======================================================
+    # 🛡️ SECURE IP TRACKING SYSTEM
+    # =======================================================
+    # ইউজারের আসল IP বের করা (Cloudflare/Render Proxy পার হয়ে)
+    client_ip = request.headers.get('X-Forwarded-For', request.remote)
+    if client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+        
+    # চেক করবে গত ২৪ ঘণ্টায় এই IP থেকে ভিজিট হয়েছে কি না
+    twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
+    recent_visit = ip_logs_db.find_one({
+        "ip": client_ip,
+        "link_id": link_id,
+        "timestamp": {"$gte": twenty_four_hours_ago}
+    })
+    
+    if not recent_visit:
+        # নতুন ভিজিট হলে ভিউ কাউন্ট বাড়াবে এবং IP সেভ করবে
+        shortlinks_db.update_one({"_id": link_id}, {"$inc": {"views": 1}})
+        ip_logs_db.insert_one({
+            "ip": client_ip,
+            "link_id": link_id,
+            "timestamp": datetime.now()
+        })
+    # যদি recent_visit থাকে, তবে ভিউ কাউন্ট বাড়বে না (Fake View Blocked!)
+    # =======================================================
     
     # ডাটাবেস থেকে সেটিংস এবং অ্যাড কোড বের করা
     timer = await get_variable("timer_sec", 10)
@@ -198,7 +224,6 @@ async def api_stats(request):
     start_msg = await get_variable("START_MSG", "")
     fsub_channels = await get_variable("fsub_channels", [])
     
-    # New Ad variables
     timer_sec = await get_variable("timer_sec", 10)
     ad_code_1 = await get_variable("ad_code_1", "")
     ad_code_2 = await get_variable("ad_code_2", "")
@@ -246,10 +271,6 @@ async def api_update(request):
     except Exception as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
 
-# ==========================================
-# 💸 WITHDRAWAL REQUEST APIs
-# ==========================================
-
 @routes.get("/api/withdrawals")
 async def api_get_withdrawals(request):
     if not check_auth(request):
@@ -292,13 +313,8 @@ async def api_withdraw_action(request):
     except Exception as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
 
-# ==========================================
-# 👥 USER MANAGEMENT APIs
-# ==========================================
-
 @routes.post("/api/user_action")
 async def api_user_action(request):
-    """ওয়েব প্যানেল থেকে ইউজারকে সার্চ, ব্যালেন্স এডিট বা ব্যান করার জন্য"""
     if not check_auth(request):
         return web.json_response({"error": "Unauthorized"}, status=401)
         
@@ -346,13 +362,8 @@ async def api_user_action(request):
     except Exception as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
 
-# ==========================================
-# 📢 WEB BROADCAST API
-# ==========================================
-
 @routes.post("/api/web_broadcast")
 async def api_web_broadcast(request):
-    """ওয়েব প্যানেল থেকে পাঠানো মেসেজ সকল ইউজারের কাছে ব্রডকাস্ট করবে"""
     if not check_auth(request):
         return web.json_response({"error": "Unauthorized"}, status=401)
         
@@ -364,16 +375,14 @@ async def api_web_broadcast(request):
             return web.json_response({"success": False, "error": "Message is empty!"})
             
         async def run_broadcast():
-            # 🔥 Circular Import এরর ফিক্স করার জন্য Bot কে এখানে লোকালি ইম্পোর্ট করা হলো!
             from bot import Bot 
-            
             users = await full_userbase()
             for uid in users:
                 try:
                     await Bot.send_message(chat_id=uid, text=text, disable_web_page_preview=True)
-                    await asyncio.sleep(0.5) # FloodWait এড়ানোর জন্য
+                    await asyncio.sleep(0.5) 
                 except Exception:
-                    pass # ব্লক করা ইউজারদের ইগনোর করবে
+                    pass 
                     
         asyncio.create_task(run_broadcast())
         return web.json_response({"success": True})
