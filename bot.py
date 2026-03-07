@@ -9,7 +9,7 @@ from aiohttp import web
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 
-from basic.loop import api_switch_loop
+# 🔥 FIX: basic.loop ইম্পোর্ট সরিয়ে ফেলা হয়েছে কারণ ফাইলটি আর নেই
 from config import (
     API_HASH,
     APP_ID,
@@ -51,14 +51,14 @@ class Bot(Client):
         usr_bot_me = self.me
         self.uptime = datetime.now()
 
-        # 🔥 FIX 1: Database Channel Setup (Without this, bot will crash on file requests)
+        # 📂 Database Channel Setup (ফাইল রিকোয়েস্টের জন্য মাস্ট)
         try:
             self.db_channel = await self.get_chat(CHANNEL_ID)
         except Exception as e:
             self.LOGGER(__name__).error(f"Make sure bot is admin in DB Channel! Error: {e}")
             sys.exit(1)
 
-        # === সিকিউরিটি ফিক্স ===
+        # 🛡️ সিকিউরিটি এবং অ্যাডমিন অটো-সেটআপ
         owner_str = await get_variable("owner", "")
         owner = [int(x.strip()) for x in owner_str.split() if x.strip().isdigit()]
         
@@ -79,14 +79,13 @@ class Bot(Client):
         if updated_admin:
             await set_variable("admin", admin)
 
-        # Web Server Start
+        # 🌐 Web Server Start (অ্যাডমিন প্যানেল ও শর্টলিংক ভিউয়ের জন্য)
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
         await web.TCPSite(app, bind_address, PORT).start()
 
-        # Start background loops
-        asyncio.create_task(api_switch_loop())
+        # 🔥 FIX: api_switch_loop টাস্কটি সরিয়ে ফেলা হয়েছে
         
         print(name)
         self.LOGGER(__name__).info(f"Bot started as {usr_bot_me.first_name}")
