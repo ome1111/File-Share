@@ -9,6 +9,7 @@ Key changes
 5. Auto-delete and broadcast run in background tasks; main coroutine returns instantly.
 6. Smaller helpers (parse_ids, make_caption) remove repetitive code.
 7. 🔥 Added User Earning System Logic (Seamless integration).
+8. 🚀 Added Referral Tracking & Ban System Logic.
 """
 import asyncio, random, string, logging
 from datetime import datetime, timedelta
@@ -29,12 +30,12 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from bot import Bot
 from command.work import not_subscribed
 from config import LOGGER, images, premiumurl
-from database.database import (add_user, del_user, full_userbase,
+from database.database import (add_user, del_user, full_userbase, get_user,
                                get_variable, present_user, set_variable)
 from helper_func import decode, encode, get_messages, get_shortlink
 from users import handle_senduser_command
 
-# Earning System Import (To be implemented in database.py)
+# Earning System Import
 try:
     from database.database import add_view_to_user
 except ImportError:
@@ -115,16 +116,42 @@ async def start_command(client: Client, message: Message):
             processing_users[uid] = True
 
             try:
-                # new users --------------------------------------------------
-                if not await present_user(uid):
-                    try:  await add_user(uid)
-                    except Exception: pass
-
                 txt = message.text
+                
+                # =======================================================
+                # 🚀 REFERRAL SYSTEM & NEW USER REGISTRATION
+                # =======================================================
+                if not await present_user(uid):
+                    invited_by = 0
+                    if len(txt.split()) > 1:
+                        cmd_arg = txt.split()[1]
+                        if cmd_arg.startswith("ref_"):
+                            try:
+                                invited_by = int(cmd_arg.split("_")[1])
+                            except ValueError:
+                                pass
+                    try:
+                        await add_user(uid, invited_by)
+                    except Exception as e:
+                        log.error(f"Failed to add user {uid}: {e}")
+
+                # =======================================================
+                # 🛡️ ANTI-FRAUD / BAN CHECK
+                # =======================================================
+                user_data = await get_user(uid)
+                if user_data and user_data.get("is_banned", False):
+                    await message.reply_text("❌ **You are permanently banned from using this bot due to suspicious activity.**")
+                    return
+
                 if len(txt) <= 7:          # plain “/start”
                     await send_welcome(client, message); return
 
                 base64_string = txt.split(maxsplit=1)[1]
+                
+                # If it's a referral link, just send welcome message
+                if base64_string.startswith("ref_"):
+                    await send_welcome(client, message); return
+                
                 base64_string = base64_string.removeprefix("verify_").removeprefix("time_")
                 
                 # token check -----------------------------------------------
@@ -254,7 +281,7 @@ async def start_command(client: Client, message: Message):
 # helpers =========================================================
 async def send_welcome(client, msg):
     kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("💰 My Wallet", callback_data="my_wallet")], # New Wallet Button
+        [InlineKeyboardButton("💰 My Wallet", callback_data="my_wallet")],
         [InlineKeyboardButton("😊 stats", callback_data="about"),
          InlineKeyboardButton("🔒 Close", callback_data="close")]
     ])
