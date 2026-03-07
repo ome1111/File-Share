@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-link text-blue-500 mr-2"></i> Shortener Settings</h3>
@@ -115,9 +115,41 @@
                             <button onclick="updateSetting('upi_id')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
                         </div>
                     </div>
-                </div>
 
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">CPM Rate (Per 1000 Views)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="cpm" placeholder="e.g. 50" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="updateSetting('cpm')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h3 class="text-lg font-bold"><i class="fas fa-hand-holding-usd text-yellow-500 mr-2"></i> Pending Withdrawals</h3>
+                    <button onclick="loadWithdrawals()" class="text-blue-500 hover:text-blue-700"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border rounded-lg">
+                        <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                            <tr>
+                                <th class="py-3 px-6 text-left">Date</th>
+                                <th class="py-3 px-6 text-left">User ID</th>
+                                <th class="py-3 px-6 text-left">Amount</th>
+                                <th class="py-3 px-6 text-left">Method & Details</th>
+                                <th class="py-3 px-6 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawals-table-body" class="text-gray-600 text-sm font-light">
+                            </tbody>
+                    </table>
+                    <p id="no-withdrawals-msg" class="text-center text-gray-500 py-6">No pending requests found.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -161,6 +193,7 @@
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
             loadStats();
+            loadWithdrawals(); // 🔥 Load withdrawals when dashboard opens
         }
 
         function logout() {
@@ -187,15 +220,16 @@
                     headers: { "Authorization": `Bearer ${authToken}` }
                 });
                 
-                if (res.status === 401) return logout(); // Invalid token
+                if (res.status === 401) return logout();
                 
                 const data = await res.json();
                 document.getElementById("stat-users").innerText = data.total_users || 0;
                 document.getElementById("token_1").value = data.token_1 || "";
                 document.getElementById("token_2").value = data.token_2 || "";
                 document.getElementById("upi_id").value = data.upi_id || "";
+                document.getElementById("cpm").value = data.cpm || "50"; // 🔥 Show CPM rate
             } catch (err) {
-                showToast("Failed to load data", true);
+                showToast("Failed to load dashboard data", true);
             }
         }
 
@@ -218,6 +252,82 @@
                     showToast("Setting saved successfully!");
                 } else {
                     showToast(data.error || "Failed to save", true);
+                }
+            } catch (err) {
+                showToast("Connection error!", true);
+            }
+        }
+
+        // 🔥 NEW: Fetch & Display Withdrawal Requests
+        async function loadWithdrawals() {
+            try {
+                const res = await fetch("/api/withdrawals", {
+                    headers: { "Authorization": `Bearer ${authToken}` }
+                });
+                if (res.status === 401) return logout();
+                const data = await res.json();
+                
+                const tbody = document.getElementById("withdrawals-table-body");
+                const noMsg = document.getElementById("no-withdrawals-msg");
+                tbody.innerHTML = "";
+                
+                if (!data.requests || data.requests.length === 0) {
+                    noMsg.classList.remove("hidden");
+                } else {
+                    noMsg.classList.add("hidden");
+                    data.requests.forEach(req => {
+                        const row = `
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-6 text-left whitespace-nowrap">${req.date}</td>
+                            <td class="py-3 px-6 text-left font-bold">${req.user_id}</td>
+                            <td class="py-3 px-6 text-left text-green-600 font-bold">৳ ${req.amount}</td>
+                            <td class="py-3 px-6 text-left">
+                                <span class="bg-blue-100 text-blue-700 py-1 px-3 rounded-full text-xs">${req.method}</span>
+                                <br><span class="text-xs text-gray-500 mt-1 inline-block">${req.details}</span>
+                            </td>
+                            <td class="py-3 px-6 text-center">
+                                <div class="flex item-center justify-center gap-2">
+                                    <button onclick="handleWithdrawal('${req._id}', 'Paid', '${req.user_id}', ${req.amount})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded shadow text-xs"><i class="fas fa-check"></i> Paid</button>
+                                    <button onclick="handleWithdrawal('${req._id}', 'Rejected', '${req.user_id}', ${req.amount})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow text-xs"><i class="fas fa-times"></i> Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading withdrawals", err);
+            }
+        }
+
+        // 🔥 NEW: Handle Approve/Reject Actions
+        async function handleWithdrawal(reqId, action, userId, amount) {
+            if(!confirm(`Are you sure you want to mark this request as ${action}?`)) return;
+            
+            try {
+                const res = await fetch("/api/withdraw_action", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ 
+                        request_id: reqId, 
+                        action: action,
+                        user_id: parseInt(userId),
+                        amount: parseFloat(amount)
+                    })
+                });
+                const data = await res.json();
+                
+                if (res.status === 401) return logout();
+
+                if (data.success) {
+                    showToast(`Request marked as ${action}!`);
+                    loadWithdrawals(); // Reload table after action
+                } else {
+                    showToast(data.error || "Action failed", true);
                 }
             } catch (err) {
                 showToast("Connection error!", true);
