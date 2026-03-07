@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Admin Panel</title>
+    <title>Pro Bot Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -19,12 +19,16 @@
             opacity: 1;
             pointer-events: auto;
         }
+        /* Tab Styles */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-link.active { border-bottom: 4px solid #3b82f6; color: #3b82f6; font-weight: bold; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased">
 
-    <div id="toast" class="fixed top-5 right-5 z-50 bg-green-500 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2">
-        <i class="fas fa-check-circle"></i>
+    <div id="toast" class="fixed top-5 right-5 z-50 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2">
+        <i class="fas fa-check-circle" id="toast-icon"></i>
         <span id="toast-message">Success!</span>
     </div>
 
@@ -32,8 +36,8 @@
         <div class="bg-white p-8 rounded-lg shadow-2xl w-96 max-w-full">
             <div class="text-center mb-8">
                 <i class="fas fa-robot text-5xl text-blue-600 mb-3"></i>
-                <h1 class="text-2xl font-bold text-gray-800">Admin Login</h1>
-                <p class="text-gray-500 text-sm">File Sharing Bot Web Panel</p>
+                <h1 class="text-2xl font-bold text-gray-800">Admin Pro Login</h1>
+                <p class="text-gray-500 text-sm">Advanced Bot Web Panel</p>
             </div>
             <form id="login-form" onsubmit="handleLogin(event)">
                 <div class="mb-4">
@@ -50,103 +54,180 @@
 
     <div id="dashboard-section" class="hidden min-h-screen">
         
-        <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+        <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center sticky top-0 z-40">
             <div class="flex items-center gap-3">
                 <i class="fas fa-robot text-2xl text-blue-600"></i>
-                <h1 class="text-xl font-bold">Bot Control Panel</h1>
+                <h1 class="text-xl font-bold uppercase tracking-wide">Bot Control</h1>
+            </div>
+            <div class="flex gap-6 overflow-x-auto hidden md:flex">
+                <button onclick="switchTab('tab-dashboard')" class="nav-link active px-2 py-1 transition"><i class="fas fa-chart-pie"></i> Dashboard</button>
+                <button onclick="switchTab('tab-users')" class="nav-link px-2 py-1 transition"><i class="fas fa-users-cog"></i> Manage Users</button>
+                <button onclick="switchTab('tab-settings')" class="nav-link px-2 py-1 transition"><i class="fas fa-cogs"></i> Settings</button>
+                <button onclick="switchTab('tab-broadcast')" class="nav-link px-2 py-1 transition"><i class="fas fa-bullhorn"></i> Broadcast</button>
             </div>
             <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold transition">
                 Logout <i class="fas fa-sign-out-alt ml-1"></i>
             </button>
         </nav>
 
-        <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <div class="container mx-auto px-4 py-8 max-w-6xl">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-blue-500">
-                    <div class="bg-blue-100 p-4 rounded-full text-blue-600 text-2xl">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm font-semibold">Total Users</p>
-                        <h2 id="stat-users" class="text-3xl font-bold text-gray-800">Loading...</h2>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-green-500">
-                    <div class="bg-green-100 p-4 rounded-full text-green-600 text-2xl">
-                        <i class="fas fa-server"></i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm font-semibold">Server Status</p>
-                        <h2 class="text-2xl font-bold text-gray-800 text-green-500">Online</h2>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div id="tab-dashboard" class="tab-content active">
                 
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-link text-blue-500 mr-2"></i> Shortener Settings</h3>
-                    
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Token 1</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="token_1" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="updateSetting('token_1')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-blue-500">
+                        <div class="bg-blue-100 p-4 rounded-full text-blue-600 text-2xl"><i class="fas fa-users"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold">Total Users</p>
+                            <h2 id="stat-users" class="text-3xl font-bold text-gray-800">Loading...</h2>
                         </div>
                     </div>
-
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Token 2</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="token_2" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="updateSetting('token_2')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                    <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-green-500">
+                        <div class="bg-green-100 p-4 rounded-full text-green-600 text-2xl"><i class="fas fa-server"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold">Server Status</p>
+                            <h2 class="text-2xl font-bold text-gray-800 text-green-500">Online</h2>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-yellow-500">
+                        <div class="bg-yellow-100 p-4 rounded-full text-yellow-600 text-2xl"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold">Pending Requests</p>
+                            <h2 id="stat-pending" class="text-3xl font-bold text-gray-800">0</h2>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-wallet text-green-500 mr-2"></i> Payment Settings</h3>
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h3 class="text-lg font-bold"><i class="fas fa-money-check-alt text-yellow-500 mr-2"></i> Pending Withdrawals</h3>
+                        <button onclick="loadWithdrawals()" class="text-blue-500 hover:text-blue-700"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
                     
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">UPI ID (For Payments)</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="upi_id" placeholder="e.g. yourname@upi" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="updateSetting('upi_id')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
-                        </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white border rounded-lg">
+                            <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                                <tr>
+                                    <th class="py-3 px-6 text-left">Date</th>
+                                    <th class="py-3 px-6 text-left">User ID</th>
+                                    <th class="py-3 px-6 text-left">Amount</th>
+                                    <th class="py-3 px-6 text-left">Method & Details</th>
+                                    <th class="py-3 px-6 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawals-table-body" class="text-gray-600 text-sm font-light">
+                                </tbody>
+                        </table>
+                        <p id="no-withdrawals-msg" class="text-center text-gray-500 py-6">No pending requests found.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-users" class="tab-content">
+                <div class="bg-white rounded-lg shadow p-6 mb-6 border-t-4 border-blue-500">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-search text-blue-500 mr-2"></i> Search & Manage Users</h3>
+                    <div class="flex gap-2 mb-6">
+                        <input type="number" id="search_uid" placeholder="Enter Telegram User ID" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="searchUser()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded font-bold transition"><i class="fas fa-search"></i> Search</button>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">CPM Rate (Per 1000 Views)</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="cpm" placeholder="e.g. 50" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="updateSetting('cpm')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                    <div id="user-profile-card" class="hidden bg-gray-50 border rounded-lg p-6 shadow-inner">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div><span class="block text-sm text-gray-500">User ID</span> <span id="u_id" class="font-bold text-gray-800"></span></div>
+                            <div><span class="block text-sm text-gray-500">Wallet Balance</span> ৳ <span id="u_balance" class="font-bold text-green-600 text-lg"></span></div>
+                            <div><span class="block text-sm text-gray-500">Total Views</span> <span id="u_views" class="font-bold text-blue-600"></span></div>
+                            <div><span class="block text-sm text-gray-500">Account Status</span> <span id="u_status" class="font-bold"></span></div>
+                        </div>
+                        
+                        <div class="border-t pt-4 flex flex-wrap gap-3 items-center">
+                            <input type="number" id="amount_input" placeholder="Amount (৳)" class="border rounded py-2 px-3 w-32 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button onclick="manageUser('add')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-plus-circle"></i> Add Funds</button>
+                            <button onclick="manageUser('deduct')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-minus-circle"></i> Deduct Funds</button>
+                            
+                            <div class="ml-auto flex gap-2">
+                                <button onclick="manageUser('ban')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-ban"></i> Ban</button>
+                                <button onclick="manageUser('unban')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-check-circle"></i> Unban</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex justify-between items-center border-b pb-2 mb-4">
-                    <h3 class="text-lg font-bold"><i class="fas fa-hand-holding-usd text-yellow-500 mr-2"></i> Pending Withdrawals</h3>
-                    <button onclick="loadWithdrawals()" class="text-blue-500 hover:text-blue-700"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <div id="tab-settings" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-link text-blue-500 mr-2"></i> Monetization Settings</h3>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Shortener Token 1</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="token_1" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="updateSetting('token_1')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Shortener Token 2 (Rotation)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="token_2" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="updateSetting('token_2')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">CPM Rate (Per 1000 Views)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="cpm" placeholder="e.g. 50" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <button onclick="updateSetting('cpm')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">UPI / Payment ID</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="upi_id" placeholder="e.g. yourname@upi" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <button onclick="updateSetting('upi_id')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-cogs text-gray-600 mr-2"></i> Bot Configuration</h3>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Auto-Delete Timer (Seconds)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="del_timer" placeholder="e.g. 300 (for 5 mins) or 0 to disable" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                <button onclick="updateSetting('del_timer')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Force Sub Channels</label>
+                            <textarea id="fsub_channels" rows="2" placeholder="-100123456789, @mychannel" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 mb-2"></textarea>
+                            <button onclick="updateSetting('fsub_channels')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save F-Sub List</button>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Custom Welcome Message</label>
+                            <textarea id="START_MSG" rows="3" placeholder="Hello {mention}! Welcome to the bot..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 mb-2"></textarea>
+                            <button onclick="updateSetting('START_MSG')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Message</button>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white border rounded-lg">
-                        <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                            <tr>
-                                <th class="py-3 px-6 text-left">Date</th>
-                                <th class="py-3 px-6 text-left">User ID</th>
-                                <th class="py-3 px-6 text-left">Amount</th>
-                                <th class="py-3 px-6 text-left">Method & Details</th>
-                                <th class="py-3 px-6 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="withdrawals-table-body" class="text-gray-600 text-sm font-light">
-                            </tbody>
-                    </table>
-                    <p id="no-withdrawals-msg" class="text-center text-gray-500 py-6">No pending requests found.</p>
+            </div>
+
+            <div id="tab-broadcast" class="tab-content">
+                <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-500 max-w-3xl mx-auto">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-bullhorn text-red-500 mr-2"></i> Send Web Broadcast</h3>
+                    <p class="text-sm text-gray-600 mb-4">Send a text message directly to all your bot users from this panel. HTML tags like &lt;b&gt; &lt;i&gt; &lt;code&gt; are supported.</p>
+                    
+                    <textarea id="broadcast_text" rows="6" placeholder="Enter your broadcast message here..." class="border rounded w-full py-3 px-4 text-gray-700 mb-4 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-inner"></textarea>
+                    
+                    <button onclick="sendBroadcast()" id="btn-broadcast" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded shadow-lg transition duration-200">
+                        <i class="fas fa-paper-plane"></i> Send to All Users
+                    </button>
                 </div>
             </div>
 
@@ -159,6 +240,20 @@
         // Check if already logged in
         if (authToken) {
             showDashboard();
+        }
+
+        // Tab Switcher Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            // Reload data if dashboard is clicked
+            if(tabId === 'tab-dashboard') {
+                loadStats();
+                loadWithdrawals();
+            }
         }
 
         async function handleLogin(e) {
@@ -193,7 +288,7 @@
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
             loadStats();
-            loadWithdrawals(); // 🔥 Load withdrawals when dashboard opens
+            loadWithdrawals();
         }
 
         function logout() {
@@ -206,48 +301,58 @@
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById("toast");
-            const toastMsg = document.getElementById("toast-message");
             toast.className = `fixed top-5 right-5 z-50 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             toast.innerHTML = `<i class="fas ${isError ? 'fa-times-circle' : 'fa-check-circle'}"></i> <span>${msg}</span>`;
-            
             toast.classList.add("show");
             setTimeout(() => toast.classList.remove("show"), 3000);
         }
 
+        // Helper function for API calls to avoid repetition
+        async function apiCall(endpoint, method = "GET", body = null) {
+            const options = {
+                method,
+                headers: { "Authorization": `Bearer ${authToken}` }
+            };
+            if (body) {
+                options.headers["Content-Type"] = "application/json";
+                options.body = JSON.stringify(body);
+            }
+            const res = await fetch(endpoint, options);
+            if (res.status === 401) return logout(); // Auto logout if token expires
+            return await res.json();
+        }
+
         async function loadStats() {
             try {
-                const res = await fetch("/api/stats", {
-                    headers: { "Authorization": `Bearer ${authToken}` }
-                });
-                
-                if (res.status === 401) return logout();
-                
-                const data = await res.json();
+                const data = await apiCall("/api/stats");
                 document.getElementById("stat-users").innerText = data.total_users || 0;
+                
+                // Populate Settings
                 document.getElementById("token_1").value = data.token_1 || "";
                 document.getElementById("token_2").value = data.token_2 || "";
                 document.getElementById("upi_id").value = data.upi_id || "";
-                document.getElementById("cpm").value = data.cpm || "50"; // 🔥 Show CPM rate
+                document.getElementById("cpm").value = data.cpm || "50";
+                
+                // New Bot Settings
+                document.getElementById("del_timer").value = data.del_timer || "0";
+                document.getElementById("START_MSG").value = data.START_MSG || "";
+                document.getElementById("fsub_channels").value = data.fsub_channels ? data.fsub_channels.join(", ") : "";
+
             } catch (err) {
-                showToast("Failed to load dashboard data", true);
+                console.error(err);
             }
         }
 
         async function updateSetting(key) {
-            const value = document.getElementById(key).value;
-            try {
-                const res = await fetch("/api/update", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({ key, value })
-                });
-                const data = await res.json();
-                
-                if (res.status === 401) return logout();
+            let value = document.getElementById(key).value;
+            
+            // Format Array for F-Sub Channels
+            if(key === "fsub_channels") {
+                value = value.split(",").map(s => s.trim()).filter(Boolean);
+            }
 
+            try {
+                const data = await apiCall("/api/update", "POST", { key, value });
                 if (data.success) {
                     showToast("Setting saved successfully!");
                 } else {
@@ -258,18 +363,15 @@
             }
         }
 
-        // 🔥 NEW: Fetch & Display Withdrawal Requests
         async function loadWithdrawals() {
             try {
-                const res = await fetch("/api/withdrawals", {
-                    headers: { "Authorization": `Bearer ${authToken}` }
-                });
-                if (res.status === 401) return logout();
-                const data = await res.json();
-                
+                const data = await apiCall("/api/withdrawals");
                 const tbody = document.getElementById("withdrawals-table-body");
                 const noMsg = document.getElementById("no-withdrawals-msg");
                 tbody.innerHTML = "";
+                
+                // Update Badge
+                document.getElementById("stat-pending").innerText = data.requests ? data.requests.length : 0;
                 
                 if (!data.requests || data.requests.length === 0) {
                     noMsg.classList.remove("hidden");
@@ -287,8 +389,8 @@
                             </td>
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center gap-2">
-                                    <button onclick="handleWithdrawal('${req._id}', 'Paid', '${req.user_id}', ${req.amount})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded shadow text-xs"><i class="fas fa-check"></i> Paid</button>
-                                    <button onclick="handleWithdrawal('${req._id}', 'Rejected', '${req.user_id}', ${req.amount})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow text-xs"><i class="fas fa-times"></i> Reject</button>
+                                    <button onclick="handleWithdrawal('${req._id}', 'Paid', '${req.user_id}', ${req.amount})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded shadow text-xs transition"><i class="fas fa-check"></i> Paid</button>
+                                    <button onclick="handleWithdrawal('${req._id}', 'Rejected', '${req.user_id}', ${req.amount})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow text-xs transition"><i class="fas fa-times"></i> Reject</button>
                                 </div>
                             </td>
                         </tr>
@@ -301,38 +403,82 @@
             }
         }
 
-        // 🔥 NEW: Handle Approve/Reject Actions
         async function handleWithdrawal(reqId, action, userId, amount) {
             if(!confirm(`Are you sure you want to mark this request as ${action}?`)) return;
-            
             try {
-                const res = await fetch("/api/withdraw_action", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({ 
-                        request_id: reqId, 
-                        action: action,
-                        user_id: parseInt(userId),
-                        amount: parseFloat(amount)
-                    })
+                const data = await apiCall("/api/withdraw_action", "POST", { 
+                    request_id: reqId, action: action, user_id: parseInt(userId), amount: parseFloat(amount) 
                 });
-                const data = await res.json();
-                
-                if (res.status === 401) return logout();
-
                 if (data.success) {
                     showToast(`Request marked as ${action}!`);
-                    loadWithdrawals(); // Reload table after action
-                } else {
-                    showToast(data.error || "Action failed", true);
-                }
-            } catch (err) {
-                showToast("Connection error!", true);
+                    loadWithdrawals();
+                } else { showToast(data.error || "Action failed", true); }
+            } catch (err) { showToast("Connection error!", true); }
+        }
+
+        // ==========================================
+        // 🔥 NEW: USER MANAGEMENT API CALLS
+        // ==========================================
+        let currentManageUid = null;
+
+        async function searchUser() {
+            const uid = document.getElementById("search_uid").value;
+            if(!uid) return showToast("Enter User ID", true);
+            
+            const data = await apiCall("/api/user_action", "POST", { action: "search", user_id: parseInt(uid) });
+            
+            if(data.success) {
+                document.getElementById("user-profile-card").classList.remove("hidden");
+                document.getElementById("u_id").innerText = uid;
+                document.getElementById("u_balance").innerText = data.user.balance;
+                document.getElementById("u_views").innerText = data.user.views;
+                document.getElementById("u_status").innerHTML = data.user.is_banned ? `<span class="text-red-500 font-bold"><i class="fas fa-ban"></i> BANNED</span>` : `<span class="text-green-500 font-bold"><i class="fas fa-check-circle"></i> ACTIVE</span>`;
+                currentManageUid = parseInt(uid);
+            } else { 
+                showToast(data.error || "User not found!", true); 
+                document.getElementById("user-profile-card").classList.add("hidden"); 
             }
         }
+
+        async function manageUser(action) {
+            if(!currentManageUid) return;
+            const amount = document.getElementById("amount_input").value;
+            
+            if((action === 'add' || action === 'deduct') && !amount) return showToast("Enter amount!", true);
+            
+            const data = await apiCall("/api/user_action", "POST", { 
+                action: action, user_id: currentManageUid, amount: parseFloat(amount || 0) 
+            });
+            
+            if(data.success) { 
+                showToast(`User updated successfully!`); 
+                document.getElementById("amount_input").value = "";
+                searchUser(); // Refresh card data
+            } else { showToast(data.error || "Action failed", true); }
+        }
+
+        // ==========================================
+        // 🔥 NEW: BROADCAST API CALL
+        // ==========================================
+        async function sendBroadcast() {
+            const text = document.getElementById("broadcast_text").value;
+            if(!text) return showToast("Enter message to broadcast!", true);
+            
+            const btn = document.getElementById("btn-broadcast");
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`; 
+            btn.disabled = true;
+            
+            const data = await apiCall("/api/web_broadcast", "POST", { text: text });
+            
+            if(data.success) { 
+                showToast(`Broadcast request sent to server!`); 
+                document.getElementById("broadcast_text").value = ""; 
+            } else { showToast(data.error || "Broadcast failed", true); }
+            
+            btn.innerHTML = `<i class="fas fa-paper-plane"></i> Send to All Users`; 
+            btn.disabled = false;
+        }
+
     </script>
 </body>
 </html>
