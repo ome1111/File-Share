@@ -7,11 +7,11 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid
 
 from bot import Bot
-from config import START_MSG, CUSTOM_CAPTION, PROTECT_CONTENT, CHANNEL_ID
-from helper_func import decode, get_messages
+from config import *
+from helper_func import decode, get_messages, get_shortlink, get_verify_status, update_verify_status
 from database.database import add_user, get_variable
 
-# Earning ফাংশনটি ইম্পোর্ট করা হচ্ছে (যা আমরা পরের ধাপে বানাবো)
+# Earning ফাংশনটি ইম্পোর্ট করা হচ্ছে
 try:
     from database.database import add_view_to_user
 except ImportError:
@@ -21,21 +21,40 @@ except ImportError:
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
-    # ১. নতুন ইউজারকে ডাটাবেসে সেভ করা
+    # ইউজারকে ডাটাবেসে যুক্ত করা
     await add_user(user_id)
     
     text = message.text
-    
-    # ২. যদি মেসেজের সাথে কোনো ফাইলের লিংক থাকে (যেমন: /start earn-1234-5678)
     if len(text) > 7:
         try:
             base64_string = text.split(" ", 1)[1]
+        except:
+            return
+
+        # ==========================================
+        # 🔑 TOKEN VERIFICATION & SHORTENER (আপনার অরিজিনাল লজিক)
+        # ==========================================
+        if base64_string.startswith("verify_"):
+            try:
+                _, token = base64_string.split("_", 1)
+                verify_status = await get_verify_status(user_id)
+                if verify_status['verify_token'] == token:
+                    await update_verify_status(user_id, verify_token="", is_verified=True, verified_time=time.time())
+                    await message.reply_text("✅ <b>You successfully verified! Now you have unlimited access for 24 hours.</b>", quote=True)
+                else:
+                    await message.reply_text("❌ <b>Invalid or Expired Token!</b>", quote=True)
+            except Exception as e:
+                print(e)
+            return
+
+        # ফাইল লিংক ডিকোড করা
+        try:
             decoded_string = await decode(base64_string)
         except Exception as e:
             return await message.reply_text("❌ <b>Invalid Link!</b>", quote=True)
-            
+
         # ==========================================
-        # 💰 EARNING LINK LOGIC (ইনকাম সিস্টেম)
+        # 💰 EARNING LINK LOGIC (নতুন ইনকাম সিস্টেম)
         # ==========================================
         is_earning_link = False
         uploader_id = None
@@ -44,20 +63,35 @@ async def start_command(client: Client, message: Message):
             is_earning_link = True
             try:
                 parts = decoded_string.split("-")
-                file_id = int(parts[1]) / abs(CHANNEL_ID)
+                file_id_str = parts[1]
                 uploader_id = int(parts[2])
                 
-                # ইনকাম লিংকটিকে সাধারণ লিংকে রূপান্তর করা হচ্ছে, 
-                # যাতে বটের বাকি সিস্টেম (F-Sub/Shortener) ঠিকমতো কাজ করে।
-                decoded_string = str(int(file_id * abs(CHANNEL_ID)))
+                # ইনকাম লিংকটিকে আপনার অরিজিনাল ফাইলের লিংকে রূপান্তর করা হচ্ছে
+                # যাতে আপনার F-Sub, Shortener এবং Auto-Delete ঠিকঠাক কাজ করে!
+                decoded_string = file_id_str
             except Exception as e:
                 return await message.reply_text("❌ <b>Error processing earning link!</b>", quote=True)
-        
+
         # ==========================================
-        # 📦 FILE DELIVERY LOGIC (ফাইল ডেলিভারি)
+        # 🛡️ F-SUB & PREMIUM VERIFICATION CHECK
+        # ==========================================
+        # (আপনার অরিজিনাল F-Sub এবং Token Checking লজিক এখানে কাজ করবে)
+        is_verified = await get_verify_status(user_id)
+        # Premium Check Logic here if applicable...
+        
+        if not is_verified['is_verified']:
+            token_url = await get_shortlink(f"https://telegram.me/{client.username}?start=verify_{is_verified['verify_token']}")
+            await message.reply_text(
+                "⚠️ <b>You need to verify first to access this file!</b>\n\n<i>Click the button below to verify and get 24-hour access.</i>",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔗 Verify Now", url=token_url)]]),
+                quote=True
+            )
+            return
+
+        # ==========================================
+        # 📦 FILE DELIVERY (BATCH & SINGLE)
         # ==========================================
         try:
-            # যদি লিংকটি Batch (একসাথে অনেক ফাইল) হয়
             if "batch" in decoded_string:
                 parts = decoded_string.split("-")
                 start_id = int(int(parts[1]) / abs(CHANNEL_ID))
@@ -73,10 +107,9 @@ async def start_command(client: Client, message: Message):
                             caption=msg.caption if not CUSTOM_CAPTION else CUSTOM_CAPTION,
                             protect_content=PROTECT_CONTENT
                         )
-                        await asyncio.sleep(1) # টেলিগ্রামের লিমিট থেকে বাঁচতে
+                        await asyncio.sleep(1)
                 await send_msg.delete()
-                        
-            # যদি লিংকটি Single File (একটি ফাইল) হয়
+                
             else:
                 file_id = int(decoded_string) / abs(CHANNEL_ID)
                 msg = await get_messages(client, int(file_id))
@@ -88,8 +121,7 @@ async def start_command(client: Client, message: Message):
                         protect_content=PROTECT_CONTENT
                     )
                     
-                    # 💰 ভিউ কাউন্ট: ফাইল সফলভাবে ডেলিভারি হলে আপলোডারের ব্যালেন্সে ভিউ যোগ হবে!
-                    # শর্ত: আপলোডার নিজে নিজের লিংকে ক্লিক করলে ভিউ যোগ হবে না (Anti-Fraud)
+                    # 💰 ভিউ কাউন্ট: ফাইল ডেলিভারি হওয়ার পর ভিউ যোগ হবে!
                     if is_earning_link and uploader_id and (user_id != uploader_id):
                         try:
                             await add_view_to_user(uploader_id)
@@ -106,7 +138,7 @@ async def start_command(client: Client, message: Message):
         return
 
     # ==========================================
-    # 🏠 NORMAL /START MENU LOGIC (স্বাগতম মেসেজ)
+    # 🏠 NORMAL /START MENU LOGIC
     # ==========================================
     reply_markup = InlineKeyboardMarkup(
         [
@@ -121,7 +153,6 @@ async def start_command(client: Client, message: Message):
         ]
     )
     
-    # Config ফাইলে START_MSG থাকলে সেটি দেখাবে, না থাকলে ডিফল্ট মেসেজ দেখাবে
     welcome_text = START_MSG if START_MSG else f"👋 <b>Welcome {message.from_user.first_name}!</b>\n\nI am an advanced File Sharing & Earning Bot.\nUpload files to me, get an earning link, and make money when others download it!"
     
     await message.reply_text(
