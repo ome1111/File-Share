@@ -209,4 +209,3 @@ async def set_user_language(user_id: int, lang_code: str):
 async def get_user_language(user_id: int):
     user = user_data.find_one({"_id": user_id})
     return user.get("lang", "en") if user else "en"
-
