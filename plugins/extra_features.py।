@@ -1,0 +1,115 @@
+# (©) Inline Share, Batch Creator & Payment Notification System
+import os
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineQuery, InlineQueryResultArticle, InputTextMessageContent
+
+from bot import Bot
+from config import CHANNEL_ID
+from helper_func import encode
+from database.database import get_variable
+
+# ==========================================
+# 🔍 1. INLINE SEARCH & SHARE (Feature 16)
+# ==========================================
+@Bot.on_inline_query()
+async def inline_share_features(client: Client, query: InlineQuery):
+    """ইউজাররা যেকোনো চ্যাটে @YourBotName লিখলে ইনলাইনে তাদের রেফারেল লিংক শেয়ার করতে পারবে"""
+    user_id = query.from_user.id
+    bot_username = client.me.username
+    ref_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
+    
+    results = [
+        InlineQueryResultArticle(
+            title="💰 Share Your Referral Link",
+            description="Invite friends and earn 5% lifetime commission!",
+            thumb_url="https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+            input_message_content=InputTextMessageContent(
+                f"🚀 **Join this awesome File Sharing & Earning Bot!**\n\n"
+                f"Upload files, share links, and earn real money everyday.\n"
+                f"👉 **Click here to join & get bonus:** {ref_link}",
+                disable_web_page_preview=True
+            )
+        ),
+        InlineQueryResultArticle(
+            title="📁 Recommend this Bot",
+            description="Send the bot's standard link to any chat.",
+            thumb_url="https://cdn-icons-png.flaticon.com/512/1092/1092216.png",
+            input_message_content=InputTextMessageContent(
+                f"🤖 **Want to earn money by sharing movies or files?**\n\n"
+                f"Just start this bot, upload any file, and get your Earning Link instantly!\n"
+                f"🔗 **Start Here:** @{bot_username}"
+            )
+        )
+    ]
+    await query.answer(results, cache_time=1, is_personal=True)
+
+# ==========================================
+# 📁 2. BATCH / PLAYLIST CREATOR (Feature 17)
+# ==========================================
+@Bot.on_message(filters.command("batch") & filters.private)
+async def create_batch_link(client: Client, message: Message):
+    """অ্যাডমিনরা ডাটাবেস চ্যানেলের প্রথম ও শেষ ফাইলের আইডি দিয়ে একসাথে অনেকগুলো ফাইলের (Playlist) লিংক বানাতে পারবে"""
+    admins = await get_variable("admin", [])
+    if message.from_user.id not in admins: 
+        return
+        
+    if len(message.command) < 3:
+        text = """
+❌ **Incorrect Usage!**
+
+To create a folder/playlist link, you need the Message IDs from your Database Channel.
+**Format:** `/batch [Start_ID] [End_ID]`
+**Example:** `/batch 105 120` (This will share all files from ID 105 to 120)
+"""
+        return await message.reply_text(text)
+        
+    try:
+        start_id = int(message.command[1])
+        end_id = int(message.command[2])
+        
+        # ব্যাচ লিংক জেনারেট করা হচ্ছে
+        string = f"batch-{start_id * abs(CHANNEL_ID)}-{end_id * abs(CHANNEL_ID)}"
+        base64_string = await encode(string)
+        link = f"https://t.me/{client.username}?start={base64_string}"
+        
+        await message.reply_text(
+            f"📁 **Batch / Playlist Link Created!**\n\n"
+            f"**Files:** From ID `{start_id}` to `{end_id}`\n"
+            f"🔗 **Link:**\n`{link}`",
+            disable_web_page_preview=True
+        )
+    except ValueError:
+        await message.reply_text("❌ **Message IDs must be numbers!**")
+
+# ==========================================
+# 🎉 3. PAYMENT NOTIFICATION (Feature 7)
+# ==========================================
+@Bot.on_message(filters.command("paid") & filters.private)
+async def send_payment_notification(client: Client, message: Message):
+    """অ্যাডমিন ইউজারকে পেমেন্ট করার পর এই কমান্ড দিলে ইউজারের কাছে সুন্দর একটি নোটিফিকেশন চলে যাবে"""
+    admins = await get_variable("admin", [])
+    if message.from_user.id not in admins: 
+        return
+        
+    if len(message.command) < 3:
+        return await message.reply_text("❌ **Usage:** `/paid [User_ID] [Amount]`\nExample: `/paid 12345678 500`")
+        
+    try:
+        target_user = int(message.command[1])
+        amount = message.command[2]
+        
+        # ইউজারের ইনবক্সে রসিদ পাঠানো
+        receipt_text = f"""
+🎉 **Pᴀʏᴍᴇɴᴛ Sᴜᴄᴄᴇꜱꜱғᴜʟ!**
+
+Dear User,
+Your withdrawal request of **৳ {amount}** has been successfully processed and sent to your account. 💸
+
+_Thank you for working with us. Keep sharing links and earning more!_
+"""
+        await client.send_message(chat_id=target_user, text=receipt_text)
+        await message.reply_text(f"✅ **Success!** Payment notification sent to `{target_user}`.")
+        
+    except Exception as e:
+        await message.reply_text(f"❌ **Failed to send message:** Make sure the user hasn't blocked the bot.\nError: `{e}`")
+
