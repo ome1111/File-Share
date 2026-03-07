@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom Toast Notification Style */
+        #toast {
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(-20px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased">
+
+    <div id="toast" class="fixed top-5 right-5 z-50 bg-green-500 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Success!</span>
+    </div>
+
+    <div id="login-section" class="min-h-screen flex items-center justify-center bg-gray-900">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-96 max-w-full">
+            <div class="text-center mb-8">
+                <i class="fas fa-robot text-5xl text-blue-600 mb-3"></i>
+                <h1 class="text-2xl font-bold text-gray-800">Admin Login</h1>
+                <p class="text-gray-500 text-sm">File Sharing Bot Web Panel</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="password" type="password" placeholder="Enter admin password" required>
+                </div>
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200" type="submit">
+                    Login to Dashboard <i class="fas fa-sign-in-alt ml-1"></i>
+                </button>
+                <p id="login-error" class="text-red-500 text-sm mt-3 text-center hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-section" class="hidden min-h-screen">
+        
+        <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-robot text-2xl text-blue-600"></i>
+                <h1 class="text-xl font-bold">Bot Control Panel</h1>
+            </div>
+            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold transition">
+                Logout <i class="fas fa-sign-out-alt ml-1"></i>
+            </button>
+        </nav>
+
+        <div class="container mx-auto px-4 py-8 max-w-5xl">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-blue-500">
+                    <div class="bg-blue-100 p-4 rounded-full text-blue-600 text-2xl">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm font-semibold">Total Users</p>
+                        <h2 id="stat-users" class="text-3xl font-bold text-gray-800">Loading...</h2>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-green-500">
+                    <div class="bg-green-100 p-4 rounded-full text-green-600 text-2xl">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm font-semibold">Server Status</p>
+                        <h2 class="text-2xl font-bold text-gray-800 text-green-500">Online</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-link text-blue-500 mr-2"></i> Shortener Settings</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Token 1</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="token_1" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="updateSetting('token_1')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Token 2</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="token_2" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="updateSetting('token_2')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-wallet text-green-500 mr-2"></i> Payment Settings</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">UPI ID (For Payments)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="upi_id" placeholder="e.g. yourname@upi" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="updateSetting('upi_id')" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem("bot_admin_token");
+
+        // Check if already logged in
+        if (authToken) {
+            showDashboard();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const password = document.getElementById("password").value;
+            const errorText = document.getElementById("login-error");
+            errorText.classList.add("hidden");
+
+            try {
+                const res = await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem("bot_admin_token", authToken);
+                    showDashboard();
+                } else {
+                    errorText.innerText = data.error;
+                    errorText.classList.remove("hidden");
+                }
+            } catch (err) {
+                errorText.innerText = "Connection error!";
+                errorText.classList.remove("hidden");
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById("login-section").classList.add("hidden");
+            document.getElementById("dashboard-section").classList.remove("hidden");
+            loadStats();
+        }
+
+        function logout() {
+            localStorage.removeItem("bot_admin_token");
+            authToken = null;
+            document.getElementById("login-section").classList.remove("hidden");
+            document.getElementById("dashboard-section").classList.add("hidden");
+            document.getElementById("password").value = "";
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById("toast");
+            const toastMsg = document.getElementById("toast-message");
+            toast.className = `fixed top-5 right-5 z-50 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.innerHTML = `<i class="fas ${isError ? 'fa-times-circle' : 'fa-check-circle'}"></i> <span>${msg}</span>`;
+            
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 3000);
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch("/api/stats", {
+                    headers: { "Authorization": `Bearer ${authToken}` }
+                });
+                
+                if (res.status === 401) return logout(); // Invalid token
+                
+                const data = await res.json();
+                document.getElementById("stat-users").innerText = data.total_users || 0;
+                document.getElementById("token_1").value = data.token_1 || "";
+                document.getElementById("token_2").value = data.token_2 || "";
+                document.getElementById("upi_id").value = data.upi_id || "";
+            } catch (err) {
+                showToast("Failed to load data", true);
+            }
+        }
+
+        async function updateSetting(key) {
+            const value = document.getElementById(key).value;
+            try {
+                const res = await fetch("/api/update", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ key, value })
+                });
+                const data = await res.json();
+                
+                if (res.status === 401) return logout();
+
+                if (data.success) {
+                    showToast("Setting saved successfully!");
+                } else {
+                    showToast(data.error || "Failed to save", true);
+                }
+            } catch (err) {
+                showToast("Connection error!", true);
+            }
+        }
+    </script>
+</body>
+</html>
