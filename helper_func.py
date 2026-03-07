@@ -4,6 +4,7 @@ import asyncio
 import os
 import random
 import string
+import re
 from pyrogram import Client
 from pyrogram.errors import FloodWait
 
@@ -49,6 +50,30 @@ async def get_messages(client, message_ids):
     return messages
 
 # ==========================================
+# 🛠️ MISSING FUNCTION FIXED
+# ==========================================
+def get_message_id(client, message):
+    if message.forward_from_chat:
+        if message.forward_from_chat.id == client.db_channel.id:
+            return message.forward_from_message_id
+    elif message.forward_sender_name:
+        return 0
+    elif message.text:
+        pattern = "https://t.me/(?:c/)?(.*)/(\d+)"
+        matches = re.match(pattern, message.text)
+        if not matches:
+            return 0
+        channel_id = matches.group(1)
+        msg_id = int(matches.group(2))
+        if channel_id.isdigit():
+            if f"-100{channel_id}" == str(client.db_channel.id):
+                return msg_id
+        else:
+            if channel_id == client.db_channel.username:
+                return msg_id
+    return 0
+
+# ==========================================
 # 🚀 YOUR CUSTOM SHORTLINK GENERATOR
 # ==========================================
 async def get_shortlink(url: str):
@@ -56,15 +81,13 @@ async def get_shortlink(url: str):
     এই ফাংশনটি এখন থেকে আর Shareus ব্যবহার করবে না!
     এটি আপনার ডাটাবেসে লিংক সেভ করে আপনার ওয়েবসাইটের লিংক ইউজারকে দেবে।
     """
+    # আপনার বটের আসল ওয়েবসাইটের ডোমেইন বসানো হলো
+    YOUR_DOMAIN = "https://file-share-1hlu.onrender.com"
     
-    # ১. আপনার বটের ওয়েবসাইটের ডোমেইন
-    # Render অটোমেটিক তার ডোমেইন এখানে বসিয়ে নেবে। যদি লোকালহোস্টে টেস্ট করেন, তবে নিচের "https://..." এর জায়গায় আপনার বটের আসল লিংকটি বসিয়ে দেবেন।
-    YOUR_DOMAIN = os.environ.get("RENDER_EXTERNAL_URL", "https://your-app-name.onrender.com")
-    
-    # ২. একটি র‍্যান্ডম ৬ অক্ষরের ইউনিক আইডি তৈরি করা (যেমন: aB3x9Q)
+    # একটি র‍্যান্ডম ৬ অক্ষরের ইউনিক আইডি তৈরি করা (যেমন: aB3x9Q)
     link_id = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
     
-    # ৩. ডাটাবেসে লিংকের সব তথ্য সেভ করা
+    # ডাটাবেসে লিংকের সব তথ্য সেভ করা
     shortlinks_db.insert_one({
         "_id": link_id,
         "title": "Secure File Download",
@@ -74,6 +97,6 @@ async def get_shortlink(url: str):
         "status": "active"
     })
     
-    # ৪. আপনার ওয়েবসাইটের ভিউ পেজের ফাইনাল লিংক রিটার্ন করা
+    # আপনার ওয়েবসাইটের ভিউ পেজের ফাইনাল লিংক রিটার্ন করা
     return f"{YOUR_DOMAIN}/view/{link_id}"
 
