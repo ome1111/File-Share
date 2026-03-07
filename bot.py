@@ -51,29 +51,30 @@ class Bot(Client):
         usr_bot_me = self.me
         self.uptime = datetime.now()
 
-        # === সিকিউরিটি ফিক্স: আগের ডেভেলপারদের হার্ডকোড করা আইডি রিমুভ করা হয়েছে ===
+        # 🔥 FIX 1: Database Channel Setup (Without this, bot will crash on file requests)
+        try:
+            self.db_channel = await self.get_chat(CHANNEL_ID)
+        except Exception as e:
+            self.LOGGER(__name__).error(f"Make sure bot is admin in DB Channel! Error: {e}")
+            sys.exit(1)
+
+        # === সিকিউরিটি ফিক্স ===
         owner_str = await get_variable("owner", "")
         owner = [int(x.strip()) for x in owner_str.split() if x.strip().isdigit()]
         
-        # শুধুমাত্র Environment Variable এ দেওয়া OWNER_ID যুক্ত হবে
         if OWNER_ID and OWNER_ID not in owner:
             owner.append(OWNER_ID)
 
         admin = await get_variable("admin", [])
-
-        # Initialize if empty
         if not admin:
             admin = []
 
         updated_admin = False
-
-        # Ensure all owners are in admin
         for owner_id in owner:
             if owner_id not in admin:
                 admin.append(owner_id)
                 updated_admin = True
 
-        # Save updates
         await set_variable("owner", " ".join(map(str, owner)))
         if updated_admin:
             await set_variable("admin", admin)
@@ -94,4 +95,3 @@ class Bot(Client):
     async def stop(self, *args):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")
-
