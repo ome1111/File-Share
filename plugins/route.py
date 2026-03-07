@@ -7,8 +7,7 @@ import asyncio
 from aiohttp import web
 from bson.objectid import ObjectId
 
-# বটের ইনস্ট্যান্স ইম্পোর্ট করা হলো (ব্রডকাস্টের জন্য)
-from bot import Bot 
+# এখানে আমরা bot ইম্পোর্ট করবো না, যাতে Circular Import Error না আসে!
 from database.database import get_variable, set_variable, full_userbase, withdraw_data, user_data
 
 routes = web.RouteTableDef()
@@ -223,6 +222,9 @@ async def api_web_broadcast(request):
             
         # ব্যাকগ্রাউন্ডে ব্রডকাস্ট চালানোর জন্য টাস্ক
         async def run_broadcast():
+            # 🔥 Circular Import এরর ফিক্স করার জন্য Bot কে এখানে লোকালি ইম্পোর্ট করা হলো!
+            from bot import Bot 
+            
             users = await full_userbase()
             for uid in users:
                 try:
