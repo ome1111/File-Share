@@ -9,7 +9,6 @@ from database.database import user_data
 # ==========================================
 # 🎛️ 1. WALLET BUTTON
 # ==========================================
-# group=-1 ব্যবহার করা হয়েছে যাতে Link Generator এর আগে এটি কাজ করে
 @Bot.on_message(filters.regex("My Wallet") & filters.private, group=-1)
 async def menu_wallet(client: Client, message: Message):
     user_id = message.from_user.id
@@ -34,14 +33,13 @@ async def menu_wallet(client: Client, message: Message):
          InlineKeyboardButton("📜 History", callback_data="withdraw_history")]
     ])
     await message.reply_text(text, reply_markup=reply_markup)
-    raise StopPropagation # মেসেজটি এখানেই থামিয়ে দেবে, শর্টলিংক বানাতে যাবে না
+    raise StopPropagation
 
 # ==========================================
 # 🏆 2. LEADERBOARD BUTTON
 # ==========================================
 @Bot.on_message(filters.regex("Leaderboard") & filters.private, group=-1)
 async def menu_leaderboard(client: Client, message: Message):
-    # ডাটাবেস থেকে সবচেয়ে বেশি ইনকাম করা ১০ জনকে বের করা
     top_users = user_data.find().sort("balance", -1).limit(10)
     
     text = "🏆 **Tᴏᴘ 10 Eᴀʀɴᴇʀꜱ Lᴇᴀᴅᴇʀʙᴏᴀʀᴅ**\n\n"
@@ -118,7 +116,7 @@ async def menu_profile(client: Client, message: Message):
 # ==========================================
 @Bot.on_message(filters.regex("Settings") & filters.private, group=-1)
 async def menu_settings(client: Client, message: Message):
-    text = "⚙️ **Yᴏᴜʀ Sᴇᴛᴛɪɴɢꜱ Mᴇɴ জ্ঞ**\n\n_Select your preferred language below:_"
+    text = "⚙️ **Yᴏᴜʀ Sᴇᴛᴛɪɴɢꜱ Mᴇɴᴜ**\n\n_Select your preferred language below:_"
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("🇬🇧 English", callback_data="set_lang_en"),
          InlineKeyboardButton("🇧🇩 বাংলা", callback_data="set_lang_bn"),
@@ -141,6 +139,23 @@ async def menu_help(client: Client, message: Message):
 4️⃣ When someone opens the link, you get views & money! 💸
 
 _Need more help? Contact Admin._
+"""
+    await message.reply_text(text)
+    raise StopPropagation
+
+# ==========================================
+# 📤 7. UPLOAD FILE BUTTON (NEW)
+# ==========================================
+@Bot.on_message(filters.regex("Upload File") & filters.private, group=-1)
+async def menu_upload_file(client: Client, message: Message):
+    text = """
+📤 **Hᴏᴡ ᴛᴏ Uᴘʟᴏᴀᴅ ᴀ Fɪʟᴇ:**
+
+1️⃣ Click on the **Attachment (📎)** icon below near the typing area.
+2️⃣ Select the **Document, Video, or Photo** you want to share.
+3️⃣ Send it to me!
+
+⚡️ _I will instantly generate a monetized Earning Link for you!_
 """
     await message.reply_text(text)
     raise StopPropagation
