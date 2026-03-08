@@ -22,7 +22,10 @@
         /* Tab Styles */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        /* Desktop Active Tab */
         .nav-link.active { border-bottom: 4px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+        /* Mobile Active Tab */
+        .mobile-nav-link.active { background-color: #eff6ff; color: #3b82f6; border-left: 4px solid #3b82f6; font-weight: bold; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased">
@@ -32,8 +35,8 @@
         <span id="toast-message">Success!</span>
     </div>
 
-    <div id="login-section" class="min-h-screen flex items-center justify-center bg-gray-900">
-        <div class="bg-white p-8 rounded-lg shadow-2xl w-96 max-w-full">
+    <div id="login-section" class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
                 <i class="fas fa-robot text-5xl text-blue-600 mb-3"></i>
                 <h1 class="text-2xl font-bold text-gray-800">Admin Pro Login</h1>
@@ -42,9 +45,9 @@
             <form id="login-form" onsubmit="handleLogin(event)">
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="password" type="password" placeholder="Enter admin password" required>
+                    <input class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="password" type="password" placeholder="Enter admin password" required>
                 </div>
-                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200" type="submit">
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200" type="submit">
                     Login to Dashboard <i class="fas fa-sign-in-alt ml-1"></i>
                 </button>
                 <p id="login-error" class="text-red-500 text-sm mt-3 text-center hidden"></p>
@@ -52,29 +55,45 @@
         </div>
     </div>
 
-    <div id="dashboard-section" class="hidden min-h-screen">
+    <div id="dashboard-section" class="hidden min-h-screen relative">
         
-        <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+        <nav class="bg-white shadow-md px-4 py-3 flex justify-between items-center sticky top-0 z-40">
             <div class="flex items-center gap-3">
                 <i class="fas fa-robot text-2xl text-blue-600"></i>
-                <h1 class="text-xl font-bold uppercase tracking-wide">Bot Control</h1>
+                <h1 class="text-xl font-bold uppercase tracking-wide hidden sm:block">Bot Control</h1>
             </div>
-            <div class="flex gap-6 overflow-x-auto hidden md:flex">
+            
+            <div class="hidden md:flex gap-6">
                 <button onclick="switchTab('tab-dashboard')" class="nav-link active px-2 py-1 transition"><i class="fas fa-chart-pie"></i> Dashboard</button>
                 <button onclick="switchTab('tab-users')" class="nav-link px-2 py-1 transition"><i class="fas fa-users-cog"></i> Manage Users</button>
                 <button onclick="switchTab('tab-settings')" class="nav-link px-2 py-1 transition"><i class="fas fa-cogs"></i> Settings</button>
                 <button onclick="switchTab('tab-broadcast')" class="nav-link px-2 py-1 transition"><i class="fas fa-bullhorn"></i> Broadcast</button>
             </div>
-            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold transition">
-                Logout <i class="fas fa-sign-out-alt ml-1"></i>
-            </button>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="logout()" class="hidden md:block bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold transition">
+                    Logout <i class="fas fa-sign-out-alt ml-1"></i>
+                </button>
+
+                <button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-blue-600 focus:outline-none text-2xl px-2">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
         </nav>
 
-        <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-xl absolute w-full z-30 flex flex-col border-t transition-all">
+            <button onclick="switchTab('tab-dashboard')" class="mobile-nav-link active px-6 py-4 text-left border-b transition"><i class="fas fa-chart-pie w-6"></i> Dashboard</button>
+            <button onclick="switchTab('tab-users')" class="mobile-nav-link px-6 py-4 text-left border-b transition"><i class="fas fa-users-cog w-6"></i> Manage Users</button>
+            <button onclick="switchTab('tab-settings')" class="mobile-nav-link px-6 py-4 text-left border-b transition"><i class="fas fa-cogs w-6"></i> Settings</button>
+            <button onclick="switchTab('tab-broadcast')" class="mobile-nav-link px-6 py-4 text-left border-b transition"><i class="fas fa-bullhorn w-6"></i> Broadcast</button>
+            <button onclick="logout()" class="px-6 py-4 text-left text-red-600 font-bold hover:bg-red-50 transition"><i class="fas fa-sign-out-alt w-6"></i> Logout</button>
+        </div>
+
+        <div class="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
             
             <div id="tab-dashboard" class="tab-content active">
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white rounded-lg shadow p-6 flex items-center gap-4 border-l-4 border-blue-500">
                         <div class="bg-blue-100 p-4 rounded-full text-blue-600 text-2xl"><i class="fas fa-users"></i></div>
                         <div>
@@ -98,55 +117,36 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex justify-between items-center border-b pb-2 mb-4">
-                        <h3 class="text-lg font-bold"><i class="fas fa-money-check-alt text-yellow-500 mr-2"></i> Pending Withdrawals</h3>
-                        <button onclick="loadWithdrawals()" class="text-blue-500 hover:text-blue-700"><i class="fas fa-sync-alt"></i> Refresh</button>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border rounded-lg">
-                            <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                                <tr>
-                                    <th class="py-3 px-6 text-left">Date</th>
-                                    <th class="py-3 px-6 text-left">User ID</th>
-                                    <th class="py-3 px-6 text-left">Amount</th>
-                                    <th class="py-3 px-6 text-left">Method & Details</th>
-                                    <th class="py-3 px-6 text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="withdrawals-table-body" class="text-gray-600 text-sm font-light">
-                                </tbody>
-                        </table>
-                        <p id="no-withdrawals-msg" class="text-center text-gray-500 py-6">No pending requests found.</p>
-                    </div>
-                </div>
+                <div id="users-section" class="bg-white rounded-lg shadow p-6 mb-8 border-t-4 border-indigo-500 overflow-x-auto"></div>
+                <div id="withdraw-section" class="bg-white rounded-lg shadow p-6 mb-8 border-t-4 border-green-500 overflow-x-auto"></div>
             </div>
 
             <div id="tab-users" class="tab-content">
-                <div class="bg-white rounded-lg shadow p-6 mb-6 border-t-4 border-blue-500">
+                <div class="bg-white rounded-lg shadow p-4 md:p-6 mb-6 border-t-4 border-blue-500">
                     <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-search text-blue-500 mr-2"></i> Search & Manage Users</h3>
-                    <div class="flex gap-2 mb-6">
-                        <input type="number" id="search_uid" placeholder="Enter Telegram User ID" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button onclick="searchUser()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded font-bold transition"><i class="fas fa-search"></i> Search</button>
+                    <div class="flex flex-col sm:flex-row gap-2 mb-6">
+                        <input type="number" id="search_uid" placeholder="Enter Telegram User ID" class="border rounded w-full py-3 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="searchUser()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded font-bold transition whitespace-nowrap"><i class="fas fa-search"></i> Search</button>
                     </div>
 
-                    <div id="user-profile-card" class="hidden bg-gray-50 border rounded-lg p-6 shadow-inner">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div><span class="block text-sm text-gray-500">User ID</span> <span id="u_id" class="font-bold text-gray-800"></span></div>
-                            <div><span class="block text-sm text-gray-500">Wallet Balance</span> ৳ <span id="u_balance" class="font-bold text-green-600 text-lg"></span></div>
-                            <div><span class="block text-sm text-gray-500">Total Views</span> <span id="u_views" class="font-bold text-blue-600"></span></div>
-                            <div><span class="block text-sm text-gray-500">Account Status</span> <span id="u_status" class="font-bold"></span></div>
+                    <div id="user-profile-card" class="hidden bg-gray-50 border rounded-lg p-4 md:p-6 shadow-inner">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center md:text-left">
+                            <div class="bg-white p-3 rounded shadow-sm"><span class="block text-xs text-gray-500 uppercase">User ID</span> <span id="u_id" class="font-bold text-gray-800 break-words"></span></div>
+                            <div class="bg-white p-3 rounded shadow-sm"><span class="block text-xs text-gray-500 uppercase">Wallet</span> <span class="font-bold text-green-600">৳ <span id="u_balance"></span></span></div>
+                            <div class="bg-white p-3 rounded shadow-sm"><span class="block text-xs text-gray-500 uppercase">Total Views</span> <span id="u_views" class="font-bold text-blue-600"></span></div>
+                            <div class="bg-white p-3 rounded shadow-sm"><span class="block text-xs text-gray-500 uppercase">Status</span> <span id="u_status" class="font-bold"></span></div>
                         </div>
                         
-                        <div class="border-t pt-4 flex flex-wrap gap-3 items-center">
-                            <input type="number" id="amount_input" placeholder="Amount (৳)" class="border rounded py-2 px-3 w-32 focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <button onclick="manageUser('add')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-plus-circle"></i> Add Funds</button>
-                            <button onclick="manageUser('deduct')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-minus-circle"></i> Deduct Funds</button>
+                        <div class="border-t pt-4 flex flex-col sm:flex-row flex-wrap gap-3 items-center">
+                            <input type="number" id="amount_input" placeholder="Amount (৳)" class="border rounded py-3 px-3 w-full sm:w-32 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <button onclick="manageUser('add')" class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded font-semibold transition shadow"><i class="fas fa-plus-circle"></i> Add</button>
+                                <button onclick="manageUser('deduct')" class="flex-1 sm:flex-none bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded font-semibold transition shadow"><i class="fas fa-minus-circle"></i> Deduct</button>
+                            </div>
                             
-                            <div class="ml-auto flex gap-2">
-                                <button onclick="manageUser('ban')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-ban"></i> Ban</button>
-                                <button onclick="manageUser('unban')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-semibold transition shadow"><i class="fas fa-check-circle"></i> Unban</button>
+                            <div class="w-full sm:w-auto sm:ml-auto flex gap-2 mt-2 sm:mt-0">
+                                <button onclick="manageUser('ban')" class="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded font-semibold transition shadow"><i class="fas fa-ban"></i> Ban</button>
+                                <button onclick="manageUser('unban')" class="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded font-semibold transition shadow"><i class="fas fa-check-circle"></i> Unban</button>
                             </div>
                         </div>
                     </div>
@@ -154,9 +154,9 @@
             </div>
 
             <div id="tab-settings" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow p-4 md:p-6">
                         <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-link text-blue-500 mr-2"></i> Monetization Settings</h3>
                         
                         <div class="mb-4">
@@ -192,13 +192,13 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow p-4 md:p-6">
                         <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-cogs text-gray-600 mr-2"></i> Bot Configuration</h3>
                         
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2">Auto-Delete Timer (Seconds)</label>
                             <div class="flex gap-2">
-                                <input type="number" id="del_timer" placeholder="e.g. 300 (for 5 mins) or 0 to disable" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                <input type="number" id="del_timer" placeholder="0 to disable" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-gray-500">
                                 <button onclick="updateSetting('del_timer')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 rounded"><i class="fas fa-save"></i></button>
                             </div>
                         </div>
@@ -211,13 +211,13 @@
 
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2">Custom Welcome Message</label>
-                            <textarea id="START_MSG" rows="3" placeholder="Hello {mention}! Welcome to the bot..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 mb-2"></textarea>
+                            <textarea id="START_MSG" rows="3" placeholder="Hello {mention}! Welcome..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 mb-2"></textarea>
                             <button onclick="updateSetting('START_MSG')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Message</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow p-6 mt-6 border-t-4 border-yellow-500">
+                <div class="bg-white rounded-lg shadow p-4 md:p-6 mt-6 border-t-4 border-yellow-500">
                     <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-ad text-yellow-500 mr-2"></i> Custom Shortlink Ad Manager</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -227,35 +227,34 @@
                                 <input type="number" id="timer_sec" placeholder="e.g. 10" class="border rounded w-full py-2 px-3 focus:outline-none focus:ring-2 focus:ring-yellow-500">
                                 <button onclick="updateSetting('timer_sec')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 rounded font-bold"><i class="fas fa-save"></i></button>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Wait time for user before "Get Link" appears.</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div class="mb-2">
                             <label class="block text-gray-700 text-sm font-bold mb-2">1. Head Ad (Popunder)</label>
-                            <textarea id="ad_code_1" rows="3" placeholder="Paste script code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
-                            <button onclick="updateSetting('ad_code_1')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 1</button>
+                            <textarea id="ad_code_1" rows="3" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_1')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save</button>
                         </div>
-                        <div class="mb-4">
+                        <div class="mb-2">
                             <label class="block text-gray-700 text-sm font-bold mb-2">2. Body Ad (Social Bar)</label>
-                            <textarea id="ad_code_2" rows="3" placeholder="Paste script code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
-                            <button onclick="updateSetting('ad_code_2')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 2</button>
+                            <textarea id="ad_code_2" rows="3" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_2')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save</button>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">3. Top Banner Ad</label>
-                            <textarea id="ad_code_3" rows="3" placeholder="Paste banner code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
-                            <button onclick="updateSetting('ad_code_3')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 3</button>
+                        <div class="mb-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">3. Top Banner</label>
+                            <textarea id="ad_code_3" rows="3" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_3')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save</button>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">4. Middle Banner Ad</label>
-                            <textarea id="ad_code_4" rows="3" placeholder="Paste banner code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
-                            <button onclick="updateSetting('ad_code_4')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 4</button>
+                        <div class="mb-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">4. Middle Banner</label>
+                            <textarea id="ad_code_4" rows="3" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_4')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save</button>
                         </div>
-                        <div class="mb-4 md:col-span-2">
+                        <div class="mb-2 md:col-span-2">
                             <label class="block text-gray-700 text-sm font-bold mb-2">5. Footer Sticky Ad</label>
-                            <textarea id="ad_code_5" rows="3" placeholder="Paste footer ad code here..." class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
-                            <button onclick="updateSetting('ad_code_5')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save Ad 5</button>
+                            <textarea id="ad_code_5" rows="3" class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"></textarea>
+                            <button onclick="updateSetting('ad_code_5')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded shadow font-semibold"><i class="fas fa-save"></i> Save</button>
                         </div>
                     </div>
                 </div>
@@ -263,9 +262,9 @@
             </div>
 
             <div id="tab-broadcast" class="tab-content">
-                <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-500 max-w-3xl mx-auto">
+                <div class="bg-white rounded-lg shadow p-4 md:p-6 border-t-4 border-red-500 max-w-3xl mx-auto">
                     <h3 class="text-lg font-bold border-b pb-2 mb-4"><i class="fas fa-bullhorn text-red-500 mr-2"></i> Send Web Broadcast</h3>
-                    <p class="text-sm text-gray-600 mb-4">Send a text message directly to all your bot users from this panel. HTML tags like &lt;b&gt; &lt;i&gt; &lt;code&gt; are supported.</p>
+                    <p class="text-sm text-gray-600 mb-4">Send a message to all users. HTML tags like &lt;b&gt; &lt;i&gt; &lt;code&gt; are supported.</p>
                     
                     <textarea id="broadcast_text" rows="6" placeholder="Enter your broadcast message here..." class="border rounded w-full py-3 px-4 text-gray-700 mb-4 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-inner"></textarea>
                     
@@ -281,23 +280,38 @@
     <script>
         let authToken = localStorage.getItem("bot_admin_token");
 
-        // Check if already logged in
-        if (authToken) {
-            showDashboard();
+        if (authToken) { showDashboard(); }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById("mobile-menu");
+            menu.classList.toggle("hidden");
         }
 
         // Tab Switcher Logic
         function switchTab(tabId) {
+            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove active state from all links
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.mobile-nav-link').forEach(el => el.classList.remove('active'));
             
-            // Reload data if dashboard is clicked
-            if(tabId === 'tab-dashboard') {
-                loadStats();
-                loadWithdrawals();
-            }
+            // Activate selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active styling to clicked button (desktop & mobile)
+            const clickedLinkText = event.currentTarget.innerText.trim();
+            document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
+                if (link.innerText.trim() === clickedLinkText) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Hide mobile menu after click
+            document.getElementById("mobile-menu").classList.add("hidden");
+            
+            // Reload data
+            if(tabId === 'tab-dashboard') loadAdvancedData();
         }
 
         async function handleLogin(e) {
@@ -332,7 +346,7 @@
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
             loadStats();
-            loadWithdrawals();
+            loadAdvancedData();
         }
 
         function logout() {
@@ -341,29 +355,25 @@
             document.getElementById("login-section").classList.remove("hidden");
             document.getElementById("dashboard-section").classList.add("hidden");
             document.getElementById("password").value = "";
+            document.getElementById("mobile-menu").classList.add("hidden");
         }
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById("toast");
-            const toastMsg = document.getElementById("toast-message");
             toast.className = `fixed top-5 right-5 z-50 text-white px-6 py-3 rounded shadow-lg flex items-center gap-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             toast.innerHTML = `<i class="fas ${isError ? 'fa-times-circle' : 'fa-check-circle'}"></i> <span>${msg}</span>`;
             toast.classList.add("show");
             setTimeout(() => toast.classList.remove("show"), 3000);
         }
 
-        // Helper function for API calls to avoid repetition
         async function apiCall(endpoint, method = "GET", body = null) {
-            const options = {
-                method,
-                headers: { "Authorization": `Bearer ${authToken}` }
-            };
+            const options = { method, headers: { "Authorization": `Bearer ${authToken}` } };
             if (body) {
                 options.headers["Content-Type"] = "application/json";
                 options.body = JSON.stringify(body);
             }
             const res = await fetch(endpoint, options);
-            if (res.status === 401) return logout(); // Auto logout if token expires
+            if (res.status === 401) return logout();
             return await res.json();
         }
 
@@ -373,111 +383,103 @@
                 document.getElementById("stat-users").innerText = data.total_users || 0;
                 
                 // Populate Settings
-                document.getElementById("token_1").value = data.token_1 || "";
-                document.getElementById("token_2").value = data.token_2 || "";
-                document.getElementById("upi_id").value = data.upi_id || "";
-                document.getElementById("cpm").value = data.cpm || "50";
+                ["token_1", "token_2", "upi_id", "cpm", "del_timer", "START_MSG", "timer_sec", "ad_code_1", "ad_code_2", "ad_code_3", "ad_code_4", "ad_code_5"].forEach(id => {
+                    if(document.getElementById(id)) document.getElementById(id).value = data[id] || (id === 'cpm' ? "50" : (id === 'timer_sec' ? "10" : ""));
+                });
                 
-                // Bot Configuration
-                document.getElementById("del_timer").value = data.del_timer || "0";
-                document.getElementById("START_MSG").value = data.START_MSG || "";
                 document.getElementById("fsub_channels").value = data.fsub_channels ? data.fsub_channels.join(", ") : "";
-
-                // 🔥 Custom Shortlink Ad Settings
-                document.getElementById("timer_sec").value = data.timer_sec || "10";
-                document.getElementById("ad_code_1").value = data.ad_code_1 || "";
-                document.getElementById("ad_code_2").value = data.ad_code_2 || "";
-                document.getElementById("ad_code_3").value = data.ad_code_3 || "";
-                document.getElementById("ad_code_4").value = data.ad_code_4 || "";
-                document.getElementById("ad_code_5").value = data.ad_code_5 || "";
-
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function updateSetting(key) {
             let value = document.getElementById(key).value;
-            
-            // Format Array for F-Sub Channels
-            if(key === "fsub_channels") {
-                value = value.split(",").map(s => s.trim()).filter(Boolean);
-            }
+            if(key === "fsub_channels") value = value.split(",").map(s => s.trim()).filter(Boolean);
 
             try {
                 const data = await apiCall("/api/update", "POST", { key, value });
-                if (data.success) {
-                    showToast("Setting saved successfully!");
-                } else {
-                    showToast(data.error || "Failed to save", true);
-                }
-            } catch (err) {
-                showToast("Connection error!", true);
-            }
-        }
-
-        async function loadWithdrawals() {
-            try {
-                const data = await apiCall("/api/withdrawals");
-                const tbody = document.getElementById("withdrawals-table-body");
-                const noMsg = document.getElementById("no-withdrawals-msg");
-                tbody.innerHTML = "";
-                
-                // Update Badge
-                document.getElementById("stat-pending").innerText = data.requests ? data.requests.length : 0;
-                
-                if (!data.requests || data.requests.length === 0) {
-                    noMsg.classList.remove("hidden");
-                } else {
-                    noMsg.classList.add("hidden");
-                    data.requests.forEach(req => {
-                        const row = `
-                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="py-3 px-6 text-left whitespace-nowrap">${req.date}</td>
-                            <td class="py-3 px-6 text-left font-bold">${req.user_id}</td>
-                            <td class="py-3 px-6 text-left text-green-600 font-bold">৳ ${req.amount}</td>
-                            <td class="py-3 px-6 text-left">
-                                <span class="bg-blue-100 text-blue-700 py-1 px-3 rounded-full text-xs">${req.method}</span>
-                                <br><span class="text-xs text-gray-500 mt-1 inline-block">${req.details}</span>
-                            </td>
-                            <td class="py-3 px-6 text-center">
-                                <div class="flex item-center justify-center gap-2">
-                                    <button onclick="handleWithdrawal('${req._id}', 'Paid', '${req.user_id}', ${req.amount})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded shadow text-xs transition"><i class="fas fa-check"></i> Paid</button>
-                                    <button onclick="handleWithdrawal('${req._id}', 'Rejected', '${req.user_id}', ${req.amount})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow text-xs transition"><i class="fas fa-times"></i> Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
-                }
-            } catch (err) {
-                console.error("Error loading withdrawals", err);
-            }
-        }
-
-        async function handleWithdrawal(reqId, action, userId, amount) {
-            if(!confirm(`Are you sure you want to mark this request as ${action}?`)) return;
-            try {
-                const data = await apiCall("/api/withdraw_action", "POST", { 
-                    request_id: reqId, action: action, user_id: parseInt(userId), amount: parseFloat(amount) 
-                });
-                if (data.success) {
-                    showToast(`Request marked as ${action}!`);
-                    loadWithdrawals();
-                } else { showToast(data.error || "Action failed", true); }
+                if (data.success) showToast("Setting saved successfully!");
+                else showToast(data.error || "Failed to save", true);
             } catch (err) { showToast("Connection error!", true); }
         }
 
         // ==========================================
-        // 🔥 USER MANAGEMENT API CALLS
+        // 🔥 ADVANCED ADMIN PANEL DATA LOAD (Fixed)
         // ==========================================
-        let currentManageUid = null;
+        async function loadAdvancedData() {
+            // 1. Load Users Table
+            const userRes = await apiCall("/api/users");
+            if(userRes && userRes.success) {
+                let html = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-xl text-indigo-600"><i class="fas fa-users-cog"></i> Recent Users</h3>
+                    </div>
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead><tr class="bg-gray-100"><th class="px-4 py-2">ID</th><th class="px-4 py-2">Balance</th><th class="px-4 py-2">Views</th><th class="px-4 py-2 text-center">Action</th></tr></thead>
+                        <tbody>`;
+                userRes.users.forEach(u => {
+                    let btn = u.banned 
+                        ? `<button onclick="banUser(${u.id}, 'unban')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm shadow"><i class="fas fa-check"></i> Unban</button>` 
+                        : `<button onclick="banUser(${u.id}, 'ban')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm shadow"><i class="fas fa-ban"></i> Ban</button>`;
+                    html += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3">${u.id}</td><td class="px-4 py-3 text-green-600 font-bold">৳${u.balance}</td><td class="px-4 py-3 text-blue-600">${u.views}</td><td class="px-4 py-3 text-center">${btn}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                document.getElementById('users-section').innerHTML = html;
+            }
 
+            // 2. Load Withdrawals Table
+            const withRes = await apiCall("/api/withdrawals");
+            if(withRes && withRes.success) {
+                document.getElementById("stat-pending").innerText = withRes.withdrawals.length;
+                let html = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-xl text-green-600"><i class="fas fa-money-check-alt"></i> Pending Withdrawals</h3>
+                    </div>
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead><tr class="bg-gray-100"><th class="px-4 py-2">User ID</th><th class="px-4 py-2">Amount</th><th class="px-4 py-2">Method</th><th class="px-4 py-2">Details</th><th class="px-4 py-2 text-center">Action</th></tr></thead>
+                        <tbody>`;
+                
+                if(withRes.withdrawals.length === 0) {
+                    html += `<tr><td colspan="5" class="text-center py-6 text-gray-500 font-medium">No pending withdrawal requests.</td></tr>`;
+                } else {
+                    withRes.withdrawals.forEach(w => {
+                        html += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold">${w.user_id}</td>
+                            <td class="px-4 py-3 text-green-600 font-bold">৳${w.amount}</td>
+                            <td class="px-4 py-3"><span class="bg-blue-100 text-blue-700 py-1 px-2 rounded-full text-xs">${w.method}</span></td>
+                            <td class="px-4 py-3 text-sm">${w.details}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="approveWithdraw('${w.id}')" class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 text-sm shadow"><i class="fas fa-check-circle"></i> Approve</button>
+                            </td>
+                        </tr>`;
+                    });
+                }
+                html += '</tbody></table>';
+                document.getElementById('withdraw-section').innerHTML = html;
+            }
+        }
+
+        async function banUser(id, action) {
+            if(!confirm(`Are you sure you want to ${action} user ${id}?`)) return;
+            // Fixed API Call Logic
+            const data = await apiCall("/api/users/ban", "POST", { user_id: id, action: action });
+            if(data.success) { showToast(`User ${action}ned successfully!`); loadAdvancedData(); }
+            else showToast(data.error || "Action failed", true);
+        }
+
+        async function approveWithdraw(id) {
+            if(!confirm("Have you successfully paid this user?")) return;
+            // Fixed API Call Logic
+            const data = await apiCall("/api/withdrawals/approve", "POST", { id: id });
+            if(data.success) { showToast("Payment Approved!"); loadAdvancedData(); }
+            else showToast(data.error || "Action failed", true);
+        }
+
+        // User Profile Management (Search user tab)
+        let currentManageUid = null;
         async function searchUser() {
             const uid = document.getElementById("search_uid").value;
             if(!uid) return showToast("Enter User ID", true);
-            
             const data = await apiCall("/api/user_action", "POST", { action: "search", user_id: parseInt(uid) });
             
             if(data.success) {
@@ -496,98 +498,35 @@
         async function manageUser(action) {
             if(!currentManageUid) return;
             const amount = document.getElementById("amount_input").value;
-            
             if((action === 'add' || action === 'deduct') && !amount) return showToast("Enter amount!", true);
             
-            const data = await apiCall("/api/user_action", "POST", { 
-                action: action, user_id: currentManageUid, amount: parseFloat(amount || 0) 
-            });
-            
+            const data = await apiCall("/api/user_action", "POST", { action: action, user_id: currentManageUid, amount: parseFloat(amount || 0) });
             if(data.success) { 
                 showToast(`User updated successfully!`); 
                 document.getElementById("amount_input").value = "";
-                searchUser(); // Refresh card data
+                searchUser(); loadAdvancedData();
             } else { showToast(data.error || "Action failed", true); }
         }
 
-        // ==========================================
-        // 🔥 BROADCAST API CALL
-        // ==========================================
         async function sendBroadcast() {
             const text = document.getElementById("broadcast_text").value;
-            if(!text) return showToast("Enter message to broadcast!", true);
-            
+            if(!text) return showToast("Enter message!", true);
             const btn = document.getElementById("btn-broadcast");
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`; 
-            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`; btn.disabled = true;
             
             const data = await apiCall("/api/web_broadcast", "POST", { text: text });
+            if(data.success) { showToast(`Broadcast sent!`); document.getElementById("broadcast_text").value = ""; } 
+            else { showToast(data.error || "Broadcast failed", true); }
             
-            if(data.success) { 
-                showToast(`Broadcast request sent to server!`); 
-                document.getElementById("broadcast_text").value = ""; 
-            } else { showToast(data.error || "Broadcast failed", true); }
-            
-            btn.innerHTML = `<i class="fas fa-paper-plane"></i> Send to All Users`; 
-            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-paper-plane"></i> Send to All Users`; btn.disabled = false;
         }
-        // Advanced Admin Panel Functions
-async function loadAdvancedData() {
-    // Load Users
-    const userRes = await apiCall("/api/users");
-    if(userRes.success) {
-        let html = '<h3 class="font-bold text-xl mb-4 text-indigo-600">👥 User Management</h3><table class="w-full text-left border-collapse"><thead><tr class="bg-gray-100"><th>ID</th><th>Balance</th><th>Views</th><th>Action</th></tr></thead><tbody>';
-        userRes.users.forEach(u => {
-            let btn = u.banned ? `<button onclick="banUser(${u.id}, 'unban')" class="bg-green-500 text-white px-2 py-1 rounded">Unban</button>` : `<button onclick="banUser(${u.id}, 'ban')" class="bg-red-500 text-white px-2 py-1 rounded">Ban</button>`;
-            html += `<tr class="border-b"><td>${u.id}</td><td>৳${u.balance}</td><td>${u.views}</td><td>${btn}</td></tr>`;
-        });
-        html += '</tbody></table>';
-        document.getElementById('users-section').innerHTML = html;
-    }
 
-    // Load Withdrawals
-    const withRes = await apiCall("/api/withdrawals");
-    if(withRes.success) {
-        let html = '<h3 class="font-bold text-xl mb-4 text-green-600">💸 Pending Withdrawals</h3><table class="w-full text-left border-collapse"><thead><tr class="bg-gray-100"><th>User</th><th>Amount</th><th>Method</th><th>Details</th><th>Action</th></tr></thead><tbody>';
-        withRes.withdrawals.forEach(w => {
-            html += `<tr class="border-b"><td>${w.user_id}</td><td>৳${w.amount}</td><td>${w.method}</td><td>${w.details}</td><td><button onclick="approveWithdraw('${w.id}')" class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600">Approve</button></td></tr>`;
-        });
-        html += '</tbody></table>';
-        document.getElementById('withdraw-section').innerHTML = html;
-    }
-}
-
-async function banUser(id, action) {
-    if(!confirm(`Are you sure you want to ${action} user ${id}?`)) return;
-    await fetch("/api/users/ban", { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: id, action: action, password: currentPassword}) });
-    loadAdvancedData();
-}
-
-async function approveWithdraw(id) {
-    if(!confirm("Have you successfully paid this user?")) return;
-    await fetch("/api/withdrawals/approve", { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: id, password: currentPassword}) });
-    loadAdvancedData();
-}
-
-// Add UI containers automatically on load
-window.addEventListener('load', () => {
-    const dash = document.getElementById('tab-dashboard');
-    const userDiv = document.createElement('div');
-    userDiv.id = 'users-section';
-    userDiv.className = 'bg-white rounded-lg shadow p-6 mb-8 border-t-4 border-indigo-500 overflow-x-auto';
-    
-    const withDiv = document.createElement('div');
-    withDiv.id = 'withdraw-section';
-    withDiv.className = 'bg-white rounded-lg shadow p-6 mb-8 border-t-4 border-green-500 overflow-x-auto';
-    
-    dash.appendChild(withDiv);
-    dash.appendChild(userDiv);
-    
-    // Call function every 30 seconds
-    setInterval(loadAdvancedData, 30000);
-});
-
-
+        // Auto Refresh
+        setInterval(() => {
+            if(authToken && document.getElementById('tab-dashboard').classList.contains('active')) {
+                loadAdvancedData();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
