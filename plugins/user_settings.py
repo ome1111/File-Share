@@ -1,34 +1,13 @@
-# (©) Advanced User Settings, Thumbnail & File Rename System
+# (©) Advanced User Settings & File Rename System
 import os
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 from bot import Bot
-from database.database import set_user_thumbnail, get_user_thumbnail, set_user_language, get_user_language
+from database.database import get_user_thumbnail, set_user_language, get_user_language
 
 # ==========================================
-# 🖼️ 1. CUSTOM THUMBNAIL SYSTEM (Feature 15)
-# ==========================================
-@Bot.on_message(filters.private & filters.photo)
-async def save_thumbnail(client: Client, message: Message):
-    """ইউজার কোনো ছবি পাঠালে সেটি তার কাস্টম থাম্বনেইল হিসেবে সেভ হবে"""
-    user_id = message.from_user.id
-    file_id = message.photo.file_id
-    
-    await set_user_thumbnail(user_id, file_id)
-    await message.reply_text(
-        "✅ **Custom Thumbnail Saved!**\n\nThis image will be used for your renamed files.",
-        quote=True
-    )
-
-@Bot.on_message(filters.private & filters.command("delthumb"))
-async def delete_thumbnail(client: Client, message: Message):
-    """থাম্বনেইল ডিলিট করার কমান্ড"""
-    await set_user_thumbnail(message.from_user.id, None)
-    await message.reply_text("🗑️ **Custom Thumbnail Deleted successfully!**", quote=True)
-
-# ==========================================
-# ✍️ 2. FILE RENAME SYSTEM (Feature 14)
+# ✍️ 1. FILE RENAME SYSTEM (Feature 14)
 # ==========================================
 @Bot.on_message(filters.private & filters.command("rename"))
 async def rename_file(client: Client, message: Message):
@@ -51,7 +30,7 @@ async def rename_file(client: Client, message: Message):
         
         await wait_msg.edit_text("⏳ **Uploading with new name...**")
         
-        # ইউজারের কাস্টম থাম্বনেইল ডাটাবেস থেকে নেওয়া
+        # ইউজারের কাস্টম থাম্বনেইল ডাটাবেস থেকে নেওয়া (যদি আগে থেকে থাকে)
         thumb_id = await get_user_thumbnail(user_id)
         thumb_path = None
         if thumb_id:
@@ -86,7 +65,7 @@ async def rename_file(client: Client, message: Message):
         await wait_msg.edit_text(f"❌ **Error occurred:** `{e}`")
 
 # ==========================================
-# ⚙️ 3. MULTI-LANGUAGE & SETTINGS (Feature 33)
+# ⚙️ 2. MULTI-LANGUAGE & SETTINGS (Feature 33)
 # ==========================================
 @Bot.on_message(filters.private & filters.command("settings"))
 async def settings_menu(client: Client, message: Message):
@@ -114,7 +93,7 @@ async def change_language(client: Client, query: CallbackQuery):
     
     if lang_code == "bn":
         await query.answer("✅ ভাষা সফলভাবে পরিবর্তন করা হয়েছে!", show_alert=True)
-        await query.message.edit_text("✅ আপনার ভাষা **বাংলা** সেট করা হয়েছে। (Note: Full bot translation will be applied soon!)")
+        await query.message.edit_text("✅ আপনার ভাষা **বাংলা** সেট করা হয়েছে।")
     elif lang_code == "hi":
         await query.answer("✅ भाषा सफलतापूर्वक बदल दी गई!", show_alert=True)
         await query.message.edit_text("✅ आपकी भाषा **हिन्दी** सेट कर दी गई है।")
