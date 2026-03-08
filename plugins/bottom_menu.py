@@ -145,6 +145,6 @@ async def menu_help(client: Client, message: Message):
 3️⃣ Share it with friends or channels.
 4️⃣ When someone opens the link, you get views & money! 💸
 
-_Need more help? Contact Admin._
+_Need more help? Contact Admin.@manager672
 """
     await message.reply_text(text)
