@@ -171,9 +171,14 @@ async def start_command(client: Client, message: Message):
                     is_earning_link = True
                     try:
                         parts = decoded_raw.split("-")
-                        # 🔥 BUG FIXED HERE: get- প্রিফিক্স যুক্ত করা হলো যাতে বট ফাইল খুঁজে পায়
-                        decoded_raw = f"get-{parts[1]}"  
-                        uploader_id = int(parts[2])
+                        uploader_id = int(parts[-1]) # Last item is always user_id
+                        
+                        # একাধিক ফাইল নাকি ১টি ফাইল, তা চেক করে লিংক ডিকোড করা
+                        if len(parts) == 4: # Format: earn-firstID-lastID-userID (For Album)
+                            decoded_raw = f"get-{parts[1]}-{parts[2]}"
+                        else: # Format: earn-firstID-userID (For Single File)
+                            decoded_raw = f"get-{parts[1]}"
+                            
                     except Exception as e:
                         log.error(f"Earning decode error: {e}")
                         await message.reply_text("❌ Invalid Earning Link."); return
@@ -251,7 +256,7 @@ async def start_command(client: Client, message: Message):
                             log.error("copy error %s", e)
 
                 # 🔥 MASTERSTROKE: BOT EARNING LOGIC REMOVED FROM HERE
-                # (টাকা এখন সরাসরি ওয়েবসাইট থেকে অ্যাড হবে, ফলে বাইপাস করলে ইনকাম হবে না)
+                # (টাকা এখন সরাসরি ওয়েবসাইট থেকে অ্যাড হবে, ফলে বাইপাস করলে ইনকাম হবেবিধা)
 
                 if await get_variable("del","")=="1":
                     delay = int(await get_variable("del_timer","0"))
