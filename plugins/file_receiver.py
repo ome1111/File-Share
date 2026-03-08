@@ -1,14 +1,34 @@
-# (©) Unified File, Album & Batch Receiver System with Smart Button
+# (©) Unified File, Album & Batch Receiver System with Smart Bottom Keyboard
 import asyncio
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, CallbackQuery
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, KeyboardButton
 from bot import Bot
 from database.database import get_variable
 from helper_func import encode, get_shortlink
 
 media_groups = {}
 batch_users = {}  # ব্যাচ মোডে থাকা ইউজারদের ট্র্যাক করার জন্য
+
+# ==========================================
+# 🎛️ KEYBOARDS
+# ==========================================
+MAIN_MENU = ReplyKeyboardMarkup(
+    [
+        [KeyboardButton("📤 Upload File"), KeyboardButton("💰 My Wallet")],
+        [KeyboardButton("🏆 Leaderboard"), KeyboardButton("🔗 Referral Link")],
+        [KeyboardButton("👤 My Profile"), KeyboardButton("⚙️ Settings")],
+        [KeyboardButton("❓ Help & Info")]
+    ],
+    resize_keyboard=True,
+    is_persistent=True
+)
+
+UPLOAD_MENU = ReplyKeyboardMarkup(
+    [[KeyboardButton("✅ FINISH UPLOAD")]],
+    resize_keyboard=True,
+    is_persistent=True
+)
 
 # ==========================================
 # 📦 0. SMART UPLOAD BUTTON & BATCH MODE
@@ -20,45 +40,26 @@ async def start_batch(client: Client, message: Message):
         "📤 **Upload Mode Activated!**\n\n"
         "Please send or forward all the files, videos, or photos you want to share.\n"
         "I will safely collect them in the background.\n\n"
-        "👇 **When you are completely finished sending files, click the button below:**"
+        "👇 **When you are completely finished, click the '✅ FINISH UPLOAD' button below!**"
     )
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Upload Done", callback_data="upload_done")]])
-    await message.reply_text(text, reply_markup=markup)
+    # কিবোর্ড পরিবর্তন করে শুধু ফিনিশ বাটন দেওয়া হলো
+    await message.reply_text(text, reply_markup=UPLOAD_MENU)
 
-@Bot.on_message(filters.private & filters.command("done"))
+@Bot.on_message(filters.private & (filters.command("done") | filters.regex("^✅ FINISH UPLOAD$")))
 async def finish_batch_cmd(client: Client, message: Message):
-    await process_batch_files(client, message.from_user.id, message)
-
-@Bot.on_callback_query(filters.regex("^upload_done$"))
-async def finish_batch_callback(client: Client, callback_query: CallbackQuery):
-    await process_batch_files(client, callback_query.from_user.id, callback_query.message, is_callback=True)
-
-async def process_batch_files(client, user_id, message, is_callback=False):
+    user_id = message.from_user.id
     if user_id not in batch_users:
-        text = "❌ You are not in Upload Mode! Click '📤 Upload File' first."
-        if is_callback:
-            return await message.answer(text, show_alert=True)
-        else:
-            return await message.reply_text(text)
+        return await message.reply_text("❌ You are not in Upload Mode! Click '📤 Upload File' first.", reply_markup=MAIN_MENU)
         
     messages = batch_users[user_id]
     if not messages:
         del batch_users[user_id]
-        text = "❌ You didn't send any files! Upload session cancelled."
-        if is_callback:
-            await message.delete()
-            return await message.reply_text(text)
-        else:
-            return await message.reply_text(text)
+        return await message.reply_text("❌ You didn't send any files! Upload session cancelled.", reply_markup=MAIN_MENU)
 
-    # লোডিং মেসেজ দেখানো
-    if is_callback:
-        wait_msg = message
-        await wait_msg.edit_text(f"⏳ *Processing {len(messages)} files for a single link...*")
-    else:
-        wait_msg = await message.reply_text(f"⏳ *Processing {len(messages)} files for a single link...*", quote=True)
-        
+    # মেইন মেনু কিবোর্ড ফিরিয়ে আনা হলো এবং লোডিং মেসেজ দেওয়া হলো
+    wait_msg = await message.reply_text(f"⏳ *Processing {len(messages)} files for a single link...*", reply_markup=MAIN_MENU, quote=True)
     admin_list = await get_variable("admin", [])
+    
     messages.sort(key=lambda x: x.id) # ফাইল সিরিয়াল করা
     
     copied_msgs = []
@@ -88,14 +89,14 @@ async def process_batch_files(client, user_id, message, is_callback=False):
     bot_link = f"https://t.me/{client.me.username}?start={base64_string}"
     short_link = await get_shortlink(bot_link, user_id=user_id)
     
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share Link", url=f"https://telegram.me/share/url?url={short_link}")]])
+    inline_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share Link", url=f"https://telegram.me/share/url?url={short_link}")]])
     
     if user_id in admin_list:
         text = f"✅ **Admin Batch Link Generated!**\n\n📁 **Total Files:** `{len(copied_msgs)}`\n🔗 `{short_link}`"
     else:
         text = f"🎉 **Upload Completed!**\n\n📁 **Total Files:** `{len(copied_msgs)}`\n🔗 **Your Earning Link:**\n`{short_link}`\n\n💸 *Share this link to earn money!*"
         
-    await wait_msg.edit_text(text, reply_markup=reply_markup, disable_web_page_preview=True)
+    await wait_msg.edit_text(text, reply_markup=inline_markup, disable_web_page_preview=True)
 
 
 # ==========================================
@@ -163,6 +164,7 @@ async def handle_albums(client: Client, message: Message):
     & ~filters.media_group 
     & (filters.document | filters.video | filters.audio | filters.photo)
     & ~filters.command(["start", "users", "broadcast", "addfsub", "delfsub", "withdraw", "stats", "senduser", "rename", "batch", "done"])
+    & ~filters.regex("^(📤 Upload File|💰 My Wallet|🏆 Leaderboard|🔗 Referral Link|👤 My Profile|⚙️ Settings|❓ Help & Info|✅ FINISH UPLOAD)$")
 )
 async def handle_single_upload(client: Client, message: Message):
     user_id = message.from_user.id
