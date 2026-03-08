@@ -75,11 +75,12 @@ def get_message_id(client, message):
     return 0
 
 # ==========================================
-# 🚀 YOUR CUSTOM SHORTLINK GENERATOR (Fixed)
+# 🚀 YOUR CUSTOM SHORTLINK GENERATOR (Upgraded for URL Shortening)
 # ==========================================
-async def get_shortlink(url: str):
+async def get_shortlink(url: str, user_id: int = None):
     """
     এটি আপনার ডাটাবেসে লিংক সেভ করে আপনার ওয়েবসাইটের লিংক ইউজারকে দেবে।
+    🔥 নতুন: user_id থাকলে, এই লিংকে ক্লিক পড়লে ওই ইউজার টাকা পাবে।
     """
     # আপনার বটের আসল ওয়েবসাইটের ডোমেইন
     YOUR_DOMAIN = "https://file-share-1hlu.onrender.com"
@@ -87,20 +88,27 @@ async def get_shortlink(url: str):
     # একটি র‍্যান্ডম ৬ অক্ষরের ইউনিক আইডি তৈরি করা
     link_id = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
     
+    # লিংকটি কি সাধারণ ফাইল নাকি এক্সটার্নাল (YouTube/Drive) লিংক তা চেক করা
+    link_type = "external"
+    if "t.me/" in url and "?start=" in url:
+        link_type = "bot_file"
+    
     try:
-        # 🔥 FIX: এখানে await যোগ করা হয়েছে। await ছাড়া Async DB তে ডাটা সেভ হয় না।
+        # 🔥 FIX: await যোগ করা হয়েছে এবং user_id সেভ করার অপশন দেওয়া হয়েছে
         await shortlinks_db.insert_one({
             "_id": link_id,
-            "title": "Secure File Download",
-            "destination_url": url,  # মেইন টেলিগ্রাম ফাইলের লিংক
+            "title": "Secure File Download" if link_type == "bot_file" else "Secure Link Verification",
+            "destination_url": url,  # মেইন টেলিগ্রাম ফাইলের বা এক্সটার্নাল লিংক
             "image_url": "https://cdn-icons-png.flaticon.com/512/285/285032.png",
             "views": 0,
             "status": "active",
+            "user_id": user_id,       # 💰 কার লিংক সেটা মনে রাখার জন্য
+            "link_type": link_type,   # 🔗 ফাইলের লিংক নাকি বাইরের লিংক
             "created_at": datetime.now()
         })
     except Exception as e:
         print(f"Error saving shortlink: {e}")
-        return url # এরর হলে অরিজিনাল লিংকই পাঠিয়ে দেবে যাতে ইউজার ফাইল পায়
+        return url # এরর হলে অরিজিনাল লিংকই পাঠিয়ে দেবে
     
     # আপনার ওয়েবসাইটের ভিউ পেজের ফাইনাল লিংক রিটার্ন করা
     return f"{YOUR_DOMAIN}/view/{link_id}"
