@@ -79,7 +79,6 @@ def get_message_id(client, message):
 # ==========================================
 async def get_shortlink(url: str):
     """
-    এই ফাংশনটি এখন থেকে আর Shareus ব্যবহার করবে না!
     এটি আপনার ডাটাবেসে লিংক সেভ করে আপনার ওয়েবসাইটের লিংক ইউজারকে দেবে।
     """
     # আপনার বটের আসল ওয়েবসাইটের ডোমেইন
@@ -88,8 +87,8 @@ async def get_shortlink(url: str):
     # একটি র‍্যান্ডম ৬ অক্ষরের ইউনিক আইডি তৈরি করা
     link_id = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
     
-    # 🔥 FIX: এখানে await যোগ করা হয়েছে। await ছাড়া Async DB তে ডাটা সেভ হয় না।
     try:
+        # 🔥 FIX: এখানে await যোগ করা হয়েছে। await ছাড়া Async DB তে ডাটা সেভ হয় না।
         await shortlinks_db.insert_one({
             "_id": link_id,
             "title": "Secure File Download",
@@ -101,7 +100,7 @@ async def get_shortlink(url: str):
         })
     except Exception as e:
         print(f"Error saving shortlink: {e}")
-        return url # এরর হলে অরিজিনাল লিংকই পাঠিয়ে দেবে যাতে ইউজার ফাইল পায়
+        return url # এরর হলে অরিজিনাল লিংকই পাঠিয়ে দেবে যাতে ইউজার ফাইল পায়
     
     # আপনার ওয়েবসাইটের ভিউ পেজের ফাইনাল লিংক রিটার্ন করা
     return f"{YOUR_DOMAIN}/view/{link_id}"
