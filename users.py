@@ -4,9 +4,11 @@ import os
 from config import CHANNEL_ID
 from database.database import user_data
 
-def fetch_user_ids():
+# 🔥 FIX: Async Database Fetching
+async def fetch_user_ids():
     try:
-        user_docs = user_data.find()
+        # Motor (Async) ডাটাবেস থেকে ডাটা আনার সঠিক নিয়ম
+        user_docs = await user_data.find().to_list(length=None)
         user_ids = [doc["_id"] for doc in user_docs]
         print(f"Fetched {len(user_ids)} user IDs.") 
         return user_ids
@@ -22,9 +24,9 @@ def save_user_ids_to_json(user_ids):
     except Exception as e:
         print(f"Error saving user IDs to JSON file: {e}")
 
-# 🔥 FIX 2: Client Error Fixed and Cleanup added
+# 🔥 FIX: Function upgraded to Async
 async def send_user_ids_to_channel(client):
-    user_ids = fetch_user_ids()
+    user_ids = await fetch_user_ids()
     if user_ids:
         save_user_ids_to_json(user_ids)
 
