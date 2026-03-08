@@ -16,6 +16,7 @@ DISABLE_CHANNEL_BUTTON = False
 
 @Bot.on_message(
     filters.private
+    & (filters.document | filters.video | filters.audio | filters.photo) # 🔥 FIX: বট এখন শুধু ফাইল পেলেই লিংক বানাবে, টেক্সটে নয়!
     & ~filters.command(
         [
             "start",
@@ -37,7 +38,7 @@ DISABLE_CHANNEL_BUTTON = False
     )
 )
 async def channel_post(client: Client, message: Message):
-    """অ্যাডমিনরা বটের ইনবক্সে কোনো মেসেজ/ফাইল দিলে তার আর্নিং লিংক তৈরি করবে"""
+    """অ্যাডমিনরা বটের ইনবক্সে কোনো ফাইল দিলে তার আর্নিং লিংক তৈরি করবে"""
     admin = await get_variable("admin", [])
     userid = message.from_user.id
     if userid not in admin:
@@ -54,20 +55,19 @@ async def channel_post(client: Client, message: Message):
             chat_id=client.db_channel.id, disable_notification=True
         )
     except Exception as e:
-        print(e)
-        await reply_text.edit_text("❌ Something went Wrong..!")
+        print(f"Error copying admin file: {e}")
+        await reply_text.edit_text("❌ Something went wrong while processing your file.")
         return
-        
+
     converted_id = post_message.id * abs(client.db_channel.id)
-    
-    # নতুন আর্নিং সিস্টেমের ট্যাগ (earn-id-userid)
-    string = f"earn-{converted_id}-{userid}"
+    # চ্যানেলের পোস্টের জন্য সাধারণ get- ট্যাগ ব্যবহার করা হলো
+    string = f"get-{converted_id}"
     base64_string = await encode(string)
     
     bot_username = client.me.username
     bot_link = f"https://t.me/{bot_username}?start={base64_string}"
     
-    # আপনার নিজস্ব ওয়েবসাইটের শর্টলিংক তৈরি করা
+    # শর্টলিংক তৈরি করা
     short_link = await get_shortlink(bot_link)
 
     reply_markup = InlineKeyboardMarkup(
@@ -113,7 +113,8 @@ async def new_post(client: Client, message: Message):
             ]
         ]
     )
+    
     try:
         await message.edit_reply_markup(reply_markup)
-    except Exception as e:
-        print(e)
+    except Exception:
+        pass
