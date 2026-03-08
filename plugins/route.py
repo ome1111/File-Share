@@ -22,7 +22,27 @@ def check_auth(request):
 
 @routes.get("/", allow_head=True)
 async def root_route_handler(request):
-    return web.json_response({"status": "running", "message": "File Sharing & URL Shortener Bot is Alive!"})
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="monetag" content="61d94185a23029ee0d3d5271037e5a35">
+        
+        <title>DriveLink ShareBot Server</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; color: #333; }
+            h1 { color: #4CAF50; }
+        </style>
+    </head>
+    <body>
+        <h1>✅ Server is Running Successfully!</h1>
+        <p>DriveLink ShareBot & Monetization System is active.</p>
+    </body>
+    </html>
+    """
+    return web.Response(text=html_content, content_type="text/html")
 
 # ==========================================
 # 🚀 CUSTOM SHORTLINK VIEW PAGE WITH IP TRACKING
