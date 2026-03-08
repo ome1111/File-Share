@@ -406,3 +406,50 @@ async def api_web_broadcast(request):
         
     except Exception as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
+
+from bson.objectid import ObjectId
+
+# ==========================================
+# 🚀 ADVANCED ADMIN PANEL API
+# ==========================================
+
+@routes.get("/api/users")
+async def api_get_users(request):
+    if not check_auth(request): return web.json_response({"error": "Unauthorized"}, status=401)
+    from database.database import user_data
+    users = await user_data.find().sort("join_date", -1).limit(50).to_list(length=50)
+    user_list = [{"id": u["_id"], "balance": round(u.get("balance", 0.0), 2), "views": u.get("views", 0), "banned": u.get("is_banned", False)} for u in users]
+    return web.json_response({"success": True, "users": user_list})
+
+@routes.get("/api/withdrawals")
+async def api_get_withdrawals(request):
+    if not check_auth(request): return web.json_response({"error": "Unauthorized"}, status=401)
+    from database.database import withdraw_data
+    reqs = await withdraw_data.find({"status": "Pending"}).to_list(length=50)
+    data = [{"id": str(r["_id"]), "user_id": r["user_id"], "amount": r["amount"], "method": r["method"], "details": r["details"]} for r in reqs]
+    return web.json_response({"success": True, "withdrawals": data})
+
+@routes.post("/api/withdrawals/approve")
+async def api_approve_withdrawal(request):
+    if not check_auth(request): return web.json_response({"error": "Unauthorized"}, status=401)
+    try:
+        data = await request.json()
+        req_id = data.get("id")
+        from database.database import withdraw_data
+        await withdraw_data.update_one({"_id": ObjectId(req_id)}, {"$set": {"status": "Approved"}})
+        return web.json_response({"success": True})
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)})
+
+@routes.post("/api/users/ban")
+async def api_ban_user(request):
+    if not check_auth(request): return web.json_response({"error": "Unauthorized"}, status=401)
+    try:
+        data = await request.json()
+        user_id = data.get("user_id")
+        action = data.get("action")
+        from database.database import user_data
+        await user_data.update_one({"_id": user_id}, {"$set": {"is_banned": action == "ban"}})
+        return web.json_response({"success": True})
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)})
