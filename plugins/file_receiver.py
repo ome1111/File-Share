@@ -1,5 +1,6 @@
-# (©) Unified File, Album & Batch Receiver System with Smart Bottom Keyboard
+# (©) Unified File, Link, Album & Batch Receiver System
 import asyncio
+import re
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, KeyboardButton
@@ -8,7 +9,7 @@ from database.database import get_variable
 from helper_func import encode, get_shortlink
 
 media_groups = {}
-batch_users = {}  # ব্যাচ মোডে থাকা ইউজারদের ট্র্যাক করার জন্য
+batch_users = {}  
 
 # ==========================================
 # 🎛️ KEYBOARDS
@@ -38,11 +39,10 @@ async def start_batch(client: Client, message: Message):
     batch_users[message.from_user.id] = []
     text = (
         "📤 **Upload Mode Activated!**\n\n"
-        "Please send or forward all the files, videos, or photos you want to share.\n"
+        "Please send me any Files, Videos, or **Web Links (YouTube/Drive)**.\n"
         "I will safely collect them in the background.\n\n"
         "👇 **When you are completely finished, click the '✅ FINISH UPLOAD' button below!**"
     )
-    # কিবোর্ড পরিবর্তন করে শুধু ফিনিশ বাটন দেওয়া হলো
     await message.reply_text(text, reply_markup=UPLOAD_MENU)
 
 @Bot.on_message(filters.private & (filters.command("done") | filters.regex("^✅ FINISH UPLOAD$")))
@@ -54,13 +54,11 @@ async def finish_batch_cmd(client: Client, message: Message):
     messages = batch_users[user_id]
     if not messages:
         del batch_users[user_id]
-        return await message.reply_text("❌ You didn't send any files! Upload session cancelled.", reply_markup=MAIN_MENU)
+        return await message.reply_text("❌ You didn't send any files or links! Upload session cancelled.", reply_markup=MAIN_MENU)
 
-    # মেইন মেনু কিবোর্ড ফিরিয়ে আনা হলো এবং লোডিং মেসেজ দেওয়া হলো
-    wait_msg = await message.reply_text(f"⏳ *Processing {len(messages)} files for a single link...*", reply_markup=MAIN_MENU, quote=True)
+    wait_msg = await message.reply_text(f"⏳ *Processing {len(messages)} items for a single link...*", reply_markup=MAIN_MENU, quote=True)
     admin_list = await get_variable("admin", [])
-    
-    messages.sort(key=lambda x: x.id) # ফাইল সিরিয়াল করা
+    messages.sort(key=lambda x: x.id) 
     
     copied_msgs = []
     for msg in messages:
@@ -74,12 +72,11 @@ async def finish_batch_cmd(client: Client, message: Message):
     del batch_users[user_id]
 
     if not copied_msgs:
-        return await wait_msg.edit_text("❌ Failed to process files.")
+        return await wait_msg.edit_text("❌ Failed to process items.")
 
     first_id = copied_msgs[0].id * abs(client.db_channel.id)
     last_id = copied_msgs[-1].id * abs(client.db_channel.id)
 
-    # লিংক জেনারেট
     if user_id in admin_list:
         string = f"get-{first_id}-{last_id}"
     else:
@@ -92,12 +89,11 @@ async def finish_batch_cmd(client: Client, message: Message):
     inline_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share Link", url=f"https://telegram.me/share/url?url={short_link}")]])
     
     if user_id in admin_list:
-        text = f"✅ **Admin Batch Link Generated!**\n\n📁 **Total Files:** `{len(copied_msgs)}`\n🔗 `{short_link}`"
+        text = f"✅ **Admin Batch Link Generated!**\n\n📁 **Total Items:** `{len(copied_msgs)}`\n🔗 `{short_link}`"
     else:
-        text = f"🎉 **Upload Completed!**\n\n📁 **Total Files:** `{len(copied_msgs)}`\n🔗 **Your Earning Link:**\n`{short_link}`\n\n💸 *Share this link to earn money!*"
+        text = f"🎉 **Upload Completed!**\n\n📁 **Total Items:** `{len(copied_msgs)}`\n🔗 **Your Earning Link:**\n`{short_link}`\n\n💸 *Share this link to earn money!*"
         
     await wait_msg.edit_text(text, reply_markup=inline_markup, disable_web_page_preview=True)
-
 
 # ==========================================
 # 📂 1. ALBUM BATCH HANDLER
@@ -155,14 +151,14 @@ async def handle_albums(client: Client, message: Message):
     else:
         media_groups[group_id].append(message)
 
-
 # ==========================================
-# 📄 2. SINGLE FILE HANDLER
+# 🔗 2. SINGLE FILE & LINK HANDLER (Added URL Support!)
 # ==========================================
 @Bot.on_message(
     filters.private 
     & ~filters.media_group 
-    & (filters.document | filters.video | filters.audio | filters.photo)
+    # 🔥 FIX: এখানে URL বা লিংক রিসিভ করার পারমিশন অ্যাড করা হয়েছে
+    & (filters.document | filters.video | filters.audio | filters.photo | filters.regex(r"https?://[^\s]+"))
     & ~filters.command(["start", "users", "broadcast", "addfsub", "delfsub", "withdraw", "stats", "senduser", "rename", "batch", "done"])
     & ~filters.regex("^(📤 Upload File|💰 My Wallet|🏆 Leaderboard|🔗 Referral Link|👤 My Profile|⚙️ Settings|❓ Help & Info|✅ FINISH UPLOAD)$")
 )
@@ -173,7 +169,7 @@ async def handle_single_upload(client: Client, message: Message):
         return
 
     admin_list = await get_variable("admin", [])
-    reply_text = await message.reply_text("⏳ *Processing your file for monetized link...*", quote=True)
+    reply_text = await message.reply_text("⏳ *Processing your link/file for monetization...*", quote=True)
     
     try:
         post_message = await message.copy(chat_id=client.db_channel.id, disable_notification=True)
@@ -181,7 +177,7 @@ async def handle_single_upload(client: Client, message: Message):
         await asyncio.sleep(e.value + 1)
         post_message = await message.copy(chat_id=client.db_channel.id, disable_notification=True)
     except Exception:
-        return await reply_text.edit_text("❌ Something went wrong while saving your file.")
+        return await reply_text.edit_text("❌ Something went wrong while saving.")
 
     converted_id = post_message.id * abs(client.db_channel.id)
     
@@ -199,7 +195,7 @@ async def handle_single_upload(client: Client, message: Message):
         msg_text = f"✅ **Admin Link Generated!**\n\n🔗 `{short_link}`"
         await post_message.edit_reply_markup(reply_markup)
     else:
-        msg_text = f"🎉 **File Uploaded Successfully!**\n\n🔗 **Your Earning Link:**\n`{short_link}`\n\n💸 *Share this link to earn money!*"
+        msg_text = f"🎉 **Successfully Shortened!**\n\n🔗 **Your Earning Link:**\n`{short_link}`\n\n💸 *Share this link to earn money!*"
         
     await reply_text.edit(msg_text, reply_markup=reply_markup, disable_web_page_preview=True)
 
