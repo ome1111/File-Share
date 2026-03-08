@@ -9,7 +9,6 @@ from aiohttp import web
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 
-# 🔥 FIX: basic.loop ইম্পোর্ট সরিয়ে ফেলা হয়েছে কারণ ফাইলটি আর নেই
 from config import (
     API_HASH,
     APP_ID,
@@ -51,7 +50,7 @@ class Bot(Client):
         usr_bot_me = self.me
         self.uptime = datetime.now()
 
-        # 📂 Database Channel Setup (ফাইল রিকোয়েস্টের জন্য মাস্ট)
+        # 📂 Database Channel Setup (ফাইল খোঁজার জন্য এটি জরুরি)
         try:
             self.db_channel = await self.get_chat(CHANNEL_ID)
         except Exception as e:
@@ -79,13 +78,11 @@ class Bot(Client):
         if updated_admin:
             await set_variable("admin", admin)
 
-        # 🌐 Web Server Start (অ্যাডমিন প্যানেল ও শর্টলিংক ভিউয়ের জন্য)
+        # 🌐 Web Server Start (আপনার অ্যাডমিন প্যানেল ও শর্টলিংক পেজের জন্য)
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
         await web.TCPSite(app, bind_address, PORT).start()
-
-        # 🔥 FIX: api_switch_loop টাস্কটি সরিয়ে ফেলা হয়েছে
         
         print(name)
         self.LOGGER(__name__).info(f"Bot started as {usr_bot_me.first_name}")
