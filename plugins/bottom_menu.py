@@ -6,18 +6,6 @@ from bot import Bot
 from database.database import user_data, get_variable
 
 # ==========================================
-# 📤 0. UPLOAD FILE BUTTON
-# ==========================================
-@Bot.on_message(filters.regex(r"Upload File") & filters.private)
-async def menu_upload(client: Client, message: Message):
-    text = (
-        "📤 **How to Upload & Earn:**\n\n"
-        "It's very simple! Just send me any **File, Video, Photo, Audio, or a Web URL** directly here in this chat.\n\n"
-        "I will instantly convert it into a monetized shortlink. Share that link with your friends and start earning! 💸"
-    )
-    await message.reply_text(text)
-
-# ==========================================
 # 🎛️ 1. WALLET BUTTON
 # ==========================================
 @Bot.on_message(filters.regex(r"My Wallet") & filters.private)
@@ -53,7 +41,8 @@ async def menu_wallet(client: Client, message: Message):
 async def menu_leaderboard(client: Client, message: Message):
     wait_msg = await message.reply_text("🔄 **Fetching Top Earners...**", quote=True)
     
-    top_users = await user_data.find().sort("balance", -1).limit(10).to_list(10)
+    # ডাটাবেস থেকে টপ ১০ ইউজারকে বের করা
+    top_users = await user_data.find().sort("balance", -1).to_list(10)
     text = "🏆 **Tᴏᴘ 10 Eᴀʀɴᴇʀꜱ Lᴇᴀᴅᴇʀʙᴏᴀʀᴅ**\n\n"
     medals = ["🥇", "🥈", "🥉", "🏅", "🏅", "🏅", "🏅", "🏅", "🏅", "🏅"]
     
@@ -75,7 +64,12 @@ async def menu_leaderboard(client: Client, message: Message):
 @Bot.on_message(filters.regex(r"Referral Link") & filters.private)
 async def menu_referral(client: Client, message: Message):
     user_id = message.from_user.id
-    bot_username = client.me.username
+    
+    # bot_username ফেচ করার সিকিউর পদ্ধতি
+    bot_username = getattr(client, "username", None)
+    if not bot_username:
+        bot_username = (await client.get_me()).username
+        
     ref_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
     
     text = f"""
@@ -103,7 +97,8 @@ async def menu_profile(client: Client, message: Message):
         return await message.reply_text("❌ Profile not found! Please send /start first.")
 
     join_date = user.get("join_date")
-    date_str = join_date.strftime("%Y-%m-%d") if join_date else "Unknown"
+    # Date ফরম্যাট ঠিক করা
+    date_str = join_date.strftime("%Y-%m-%d") if hasattr(join_date, 'strftime') else str(join_date)
     warnings = user.get("warnings", 0)
     status = "🔴 BANNED" if user.get("is_banned") else "🟢 ACTIVE"
 
@@ -140,10 +135,11 @@ async def menu_help(client: Client, message: Message):
     text = """
 ❓ **Hᴏᴡ ᴛᴏ Uꜱᴇ ᴛʜɪꜱ Bᴏᴛ:**
 
-1️⃣ Send or forward any file/video to me.
-2️⃣ I will generate a unique **Earning Link**.
-3️⃣ Share it with friends or channels.
-4️⃣ When someone opens the link, you get views & money! 💸
+1️⃣ Click on the '📤 Upload File' button below.
+2️⃣ Send or forward any file, video or web link to me.
+3️⃣ Click on '✅ FINISH UPLOAD' to generate a unique **Earning Link**.
+4️⃣ Share it with your friends or channels.
+5️⃣ When someone opens the link, you get views & money! 💸
 
 _Need more help? Contact Admin.@manager672
 """
