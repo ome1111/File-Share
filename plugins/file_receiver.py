@@ -1,4 +1,4 @@
-# (©) Unified File, Link, Album & Batch Receiver System
+# (©) Unified File, Link, Album & Batch Receiver System (Fixed Incoming Bug)
 import asyncio
 import re
 from pyrogram import Client, filters
@@ -34,7 +34,8 @@ UPLOAD_MENU = ReplyKeyboardMarkup(
 # ==========================================
 # 📦 0. SMART UPLOAD BUTTON & BATCH MODE
 # ==========================================
-@Bot.on_message(filters.private & (filters.command("batch") | filters.regex("^📤 Upload File$")))
+# 🔥 FIX: Added filters.incoming
+@Bot.on_message(filters.private & filters.incoming & (filters.command("batch") | filters.regex("^📤 Upload File$")))
 async def start_batch(client: Client, message: Message):
     batch_users[message.from_user.id] = []
     text = (
@@ -45,7 +46,8 @@ async def start_batch(client: Client, message: Message):
     )
     await message.reply_text(text, reply_markup=UPLOAD_MENU)
 
-@Bot.on_message(filters.private & (filters.command("done") | filters.regex("^✅ FINISH UPLOAD$")))
+# 🔥 FIX: Added filters.incoming
+@Bot.on_message(filters.private & filters.incoming & (filters.command("done") | filters.regex("^✅ FINISH UPLOAD$")))
 async def finish_batch_cmd(client: Client, message: Message):
     user_id = message.from_user.id
     if user_id not in batch_users:
@@ -100,6 +102,7 @@ async def finish_batch_cmd(client: Client, message: Message):
 # ==========================================
 @Bot.on_message(
     filters.private 
+    & filters.incoming # 🔥 FIX: Added filters.incoming
     & filters.media_group
     & (filters.document | filters.video | filters.audio | filters.photo)
 )
@@ -152,12 +155,12 @@ async def handle_albums(client: Client, message: Message):
         media_groups[group_id].append(message)
 
 # ==========================================
-# 🔗 2. SINGLE FILE & LINK HANDLER (Added URL Support!)
+# 🔗 2. SINGLE FILE & LINK HANDLER 
 # ==========================================
 @Bot.on_message(
     filters.private 
+    & filters.incoming # 🔥 FIX: Added filters.incoming
     & ~filters.media_group 
-    # 🔥 FIX: এখানে URL বা লিংক রিসিভ করার পারমিশন অ্যাড করা হয়েছে
     & (filters.document | filters.video | filters.audio | filters.photo | filters.regex(r"https?://[^\s]+"))
     & ~filters.command(["start", "users", "broadcast", "addfsub", "delfsub", "withdraw", "stats", "senduser", "rename", "batch", "done"])
     & ~filters.regex("^(📤 Upload File|💰 My Wallet|🏆 Leaderboard|🔗 Referral Link|👤 My Profile|⚙️ Settings|❓ Help & Info|✅ FINISH UPLOAD)$")
