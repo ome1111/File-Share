@@ -531,6 +531,62 @@
             btn.innerHTML = `<i class="fas fa-paper-plane"></i> Send to All Users`; 
             btn.disabled = false;
         }
+        // Advanced Admin Panel Functions
+async function loadAdvancedData() {
+    // Load Users
+    const userRes = await apiCall("/api/users");
+    if(userRes.success) {
+        let html = '<h3 class="font-bold text-xl mb-4 text-indigo-600">👥 User Management</h3><table class="w-full text-left border-collapse"><thead><tr class="bg-gray-100"><th>ID</th><th>Balance</th><th>Views</th><th>Action</th></tr></thead><tbody>';
+        userRes.users.forEach(u => {
+            let btn = u.banned ? `<button onclick="banUser(${u.id}, 'unban')" class="bg-green-500 text-white px-2 py-1 rounded">Unban</button>` : `<button onclick="banUser(${u.id}, 'ban')" class="bg-red-500 text-white px-2 py-1 rounded">Ban</button>`;
+            html += `<tr class="border-b"><td>${u.id}</td><td>৳${u.balance}</td><td>${u.views}</td><td>${btn}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('users-section').innerHTML = html;
+    }
+
+    // Load Withdrawals
+    const withRes = await apiCall("/api/withdrawals");
+    if(withRes.success) {
+        let html = '<h3 class="font-bold text-xl mb-4 text-green-600">💸 Pending Withdrawals</h3><table class="w-full text-left border-collapse"><thead><tr class="bg-gray-100"><th>User</th><th>Amount</th><th>Method</th><th>Details</th><th>Action</th></tr></thead><tbody>';
+        withRes.withdrawals.forEach(w => {
+            html += `<tr class="border-b"><td>${w.user_id}</td><td>৳${w.amount}</td><td>${w.method}</td><td>${w.details}</td><td><button onclick="approveWithdraw('${w.id}')" class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600">Approve</button></td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('withdraw-section').innerHTML = html;
+    }
+}
+
+async function banUser(id, action) {
+    if(!confirm(`Are you sure you want to ${action} user ${id}?`)) return;
+    await fetch("/api/users/ban", { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: id, action: action, password: currentPassword}) });
+    loadAdvancedData();
+}
+
+async function approveWithdraw(id) {
+    if(!confirm("Have you successfully paid this user?")) return;
+    await fetch("/api/withdrawals/approve", { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: id, password: currentPassword}) });
+    loadAdvancedData();
+}
+
+// Add UI containers automatically on load
+window.addEventListener('load', () => {
+    const dash = document.getElementById('tab-dashboard');
+    const userDiv = document.createElement('div');
+    userDiv.id = 'users-section';
+    userDiv.className = 'bg-white rounded-lg shadow p-6 mb-8 border-t-4 border-indigo-500 overflow-x-auto';
+    
+    const withDiv = document.createElement('div');
+    withDiv.id = 'withdraw-section';
+    withDiv.className = 'bg-white rounded-lg shadow p-6 mb-8 border-t-4 border-green-500 overflow-x-auto';
+    
+    dash.appendChild(withDiv);
+    dash.appendChild(userDiv);
+    
+    // Call function every 30 seconds
+    setInterval(loadAdvancedData, 30000);
+});
+
 
     </script>
 </body>
