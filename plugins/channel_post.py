@@ -16,7 +16,7 @@ DISABLE_CHANNEL_BUTTON = False
 
 @Bot.on_message(
     filters.private
-    & (filters.document | filters.video | filters.audio | filters.photo) # 🔥 FIX: বট এখন শুধু ফাইল পেলেই লিংক বানাবে, টেক্সটে নয়!
+    & (filters.document | filters.video | filters.audio | filters.photo) 
     & ~filters.command(
         [
             "start",
@@ -67,8 +67,8 @@ async def channel_post(client: Client, message: Message):
     bot_username = client.me.username
     bot_link = f"https://t.me/{bot_username}?start={base64_string}"
     
-    # শর্টলিংক তৈরি করা
-    short_link = await get_shortlink(bot_link)
+    # 🔥 FIX: user_id পাঠানো হলো, যাতে ফাইল আপলোডার (অ্যাডমিন) টাকা পায়!
+    short_link = await get_shortlink(bot_link, user_id=userid)
 
     reply_markup = InlineKeyboardMarkup(
         [
@@ -97,7 +97,6 @@ async def new_post(client: Client, message: Message):
         return
 
     converted_id = message.id * abs(client.db_channel.id)
-    # চ্যানেলের পোস্টের জন্য সাধারণ get- ট্যাগ ব্যবহার করা হলো
     string = f"get-{converted_id}"
     base64_string = await encode(string)
     
